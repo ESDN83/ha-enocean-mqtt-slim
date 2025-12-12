@@ -189,16 +189,24 @@ class EnOceanMQTTService:
                 # Try to auto-detect EEP profile from teach-in telegram
                 detected_eep = None
                 device_name = f"Device {sender_id}"
+                real_device_id = sender_id  # Default to sender ID
                 
                 # For 4BS (A5) teach-in telegrams with EEP
-                if rorg == 0xA5 and len(packet.data) >= 5:
+                if rorg == 0xA5 and len(packet.data) >= 9:
                     # 4BS teach-in telegram format:
-                    # DB3.7-DB3.0: FUNC (6 bits) + TYPE (7 bits) + ...
-                    # Check if it's UTE (Universal Teach-In)
+                    # Byte 0: RORG (A5)
+                    # Byte 1-4: DB3, DB2, DB1, DB0 (teach-in data)
+                    # Byte 5-8: Real device ID (4 bytes)
+                    # Byte 9: Status
+                    
                     db3 = packet.data[1]
                     db2 = packet.data[2]
                     db1 = packet.data[3]
                     db0 = packet.data[4]
+                    
+                    # Extract real device ID from data payload
+                    real_device_id = ''.join(f'{b:02x}' for b in packet.data[5:9])
+                    logger.warning(f"   📱 Real Device ID (from data): {real_device_id}")
                     
                     # Check LRN bit (DB0.3) - 0 = teach-in
                     lrn_bit = (db0 >> 3) & 0x01
@@ -218,6 +226,10 @@ class EnOceanMQTTService:
                             logger.warning(f"   ✅ Found profile: {device_name}")
                         else:
                             logger.warning(f"   ⚠️  Profile {detected_eep} not in database")
+                
+                # Use real device ID for all operations
+                sender_id = real_device_id
+                device_name = f"Device {sender_id}" if not detected_eep else device_name
                 
                 # Check if device already exists
                 existing_device = self.device_manager.get_device(sender_id)
