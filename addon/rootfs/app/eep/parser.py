@@ -161,9 +161,16 @@ class EEPParser:
         # [RORG, Sender ID (4 bytes), Data (4 bytes), Status]
         # We need bytes 5-8 (the 4 data bytes)
         
+        logger.info(f"   📊 Parsing telegram with profile {profile.eep}")
+        logger.info(f"   Full data length: {len(full_data)} bytes")
+        logger.info(f"   Full data hex: {' '.join(f'{b:02x}' for b in full_data)}")
+        
         if len(full_data) >= 9:
             data_bytes = full_data[5:9]
-            return self.parse_telegram(data_bytes, profile)
+            logger.info(f"   Data bytes (5-8): {' '.join(f'{b:02x}' for b in data_bytes)}")
+            result = self.parse_telegram(data_bytes, profile)
+            logger.info(f"   Parsed result: {result}")
+            return result
         else:
             logger.warning(f"Telegram data too short: {len(full_data)} bytes")
             return {}

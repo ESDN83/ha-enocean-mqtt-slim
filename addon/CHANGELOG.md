@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.0.10] - 2025-12-12
+
+### Added
+- **Enhanced Telegram Logging** - Comprehensive logging for all received telegrams
+- Visual telegram display with emojis (📡 for normal, 🎓 for teach-in, ⚠️ for unknown)
+- Hex dump of all telegram data for debugging
+- Detailed parsing logs showing data extraction step-by-step
+- Instructions in logs for adding detected devices
+
+### Improved
+- Teach-in telegrams now logged at WARNING level (highly visible)
+- Unknown devices logged at WARNING level with device details
+- Each telegram shows: Sender ID, RORG, RSSI, and full data hex
+- Parser logs show data bytes being extracted and parsed values
+- Better visibility for troubleshooting device communication
+
+### Debugging
+- All telegrams logged with full details
+- Parser shows which bytes are being used
+- Easy to identify if device is sending data
+- Easy to see if parsing is working correctly
+- Helps diagnose MQTT "unknown" value issues
+
 ## [1.0.9] - 2025-12-12
 
 ### Fixed

@@ -167,24 +167,53 @@ class EnOceanMQTTService:
             rorg = packet.get_rorg()
             rssi = packet.get_rssi()
             
-            logger.info(f"Received telegram from {sender_id}, RORG={hex(rorg) if rorg else 'N/A'}, RSSI={rssi}dBm")
+            # Log raw data for debugging
+            data_hex = ' '.join(f'{b:02x}' for b in packet.data)
+            
+            logger.info("=" * 80)
+            logger.info(f"📡 TELEGRAM RECEIVED")
+            logger.info(f"   Sender ID: {sender_id}")
+            logger.info(f"   RORG: {hex(rorg) if rorg else 'N/A'}")
+            logger.info(f"   RSSI: {rssi} dBm")
+            logger.info(f"   Data: {data_hex}")
             
             # Check if it's a teach-in telegram
             if packet.is_teach_in():
-                logger.info(f"  → Teach-in telegram detected!")
+                logger.warning("=" * 80)
+                logger.warning("🎓 TEACH-IN TELEGRAM DETECTED!")
+                logger.warning(f"   Device ID: {sender_id}")
+                logger.warning(f"   RORG: {hex(rorg)}")
+                logger.warning(f"   RSSI: {rssi} dBm")
+                logger.warning(f"   Data: {data_hex}")
+                logger.warning("")
+                logger.warning("   To add this device:")
+                logger.warning(f"   1. Go to Web UI")
+                logger.warning(f"   2. Click 'Add Device'")
+                logger.warning(f"   3. Enter Device ID: {sender_id}")
+                logger.warning(f"   4. Select appropriate EEP profile")
+                logger.warning("=" * 80)
                 return
             
             # Look up device
             device = self.device_manager.get_device(sender_id)
             if not device:
-                logger.debug(f"  Unknown device {sender_id} - not configured")
+                logger.warning("⚠️  UNKNOWN DEVICE (not configured)")
+                logger.warning(f"   Device ID: {sender_id}")
+                logger.warning(f"   RORG: {hex(rorg)}")
+                logger.warning(f"   RSSI: {rssi} dBm")
+                logger.warning(f"   Data: {data_hex}")
+                logger.warning("")
+                logger.warning("   This device is not in your configuration.")
+                logger.warning("   Add it via Web UI if you want to use it.")
+                logger.info("=" * 80)
                 return
             
             if not device.get('enabled'):
-                logger.debug(f"  Device {sender_id} is disabled")
+                logger.info(f"   ⏸️  Device {sender_id} is DISABLED")
+                logger.info("=" * 80)
                 return
             
-            logger.info(f"  → Device: {device['name']} ({device['eep']})")
+            logger.info(f"   ✅ Known Device: {device['name']} ({device['eep']})")
             
             # Update last seen
             self.device_manager.update_last_seen(sender_id, rssi)
