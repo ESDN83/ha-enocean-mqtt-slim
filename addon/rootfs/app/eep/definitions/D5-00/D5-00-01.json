@@ -1,15 +1,27 @@
 {
-  "eep": "MV-01-01",
-  "rorg_number": "0xA5",
-  "telegram": "4BS",
-  "func_number": "0x01",
+  "eep": "D5-00-01",
+  "rorg_number": "0xD5",
+  "telegram": "1BS",
+  "func_number": "0x00",
   "type_number": "0x01",
-  "type_title": "Kessel Staufix Control",
+  "type_title": "Single Input Contact",
   "bidirectional": false,
   "objects": {
-    "preDefined": [
-      "AL"
-    ],
+    "CO": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Contact open",
+          "de": "Kontakt offen"
+        },
+        "role": "indicator",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false
+      },
+      "native": {}
+    },
     "rssi": {
       "name": "RSSI",
       "component": "sensor",
@@ -29,25 +41,18 @@
   "case": [
     {
       "send": false,
-      "condition": [
-        {
-          "bitoffs": "0",
-          "bitsize": "8",
-          "value": 1
-        }
-      ],
       "datafield": [
         {
-          "data": "Alarm",
-          "shortcut": "AL",
-          "bitoffs": "29",
+          "data": "Contact open",
+          "shortcut": "CO",
+          "bitoffs": "7",
           "bitsize": "1",
           "value": {
-            "==": [
+            "===": [
               {
                 "var": "value"
               },
-              1
+              0
             ]
           }
         }

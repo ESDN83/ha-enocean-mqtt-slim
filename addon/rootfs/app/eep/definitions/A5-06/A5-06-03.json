@@ -1,0 +1,87 @@
+{
+  "eep": "A5-06-03",
+  "rorg_number": "0xA5",
+  "telegram": "4BS",
+  "func_number": "0x06",
+  "type_number": "0x03",
+  "type_title": "Light Sensor 10-bit measurement (1-Lux resolution) Range 0lx to 1.000lx",
+  "bidirectional": false,
+  "objects": {
+    "preDefined": [
+      "ILL",
+      "SVC"
+    ],
+    "rssi": {
+      "name": "RSSI",
+      "component": "sensor",
+      "device_class": "signal_strength",
+      "unit": "dBm",
+      "icon": "mdi:wifi",
+      "description": "Signal strength"
+    },
+    "last_seen": {
+      "name": "Last Seen",
+      "component": "sensor",
+      "device_class": "timestamp",
+      "icon": "mdi:clock-outline",
+      "description": "Last telegram received"
+    }
+  },
+  "case": [
+    {
+      "send": false,
+      "datafield": [
+        {
+          "data": "Illumination",
+          "shortcut": "ILL",
+          "bitoffs": "8",
+          "bitsize": "10",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  1
+                ]
+              },
+              0
+            ]
+          },
+          "decimals": 2
+        },
+        {
+          "data": "Supply Voltage 0...5.0V",
+          "shortcut": "SVC",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.02
+                ]
+              },
+              0
+            ]
+          },
+          "decimals": 2
+        }
+      ]
+    }
+  ]
+}

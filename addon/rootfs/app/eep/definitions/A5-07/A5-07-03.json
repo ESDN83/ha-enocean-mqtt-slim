@@ -1,0 +1,102 @@
+{
+  "eep": "A5-07-03",
+  "rorg_number": "0xA5",
+  "telegram": "4BS",
+  "func_number": "0x07",
+  "type_number": "0x03",
+  "type_title": "Occupancy with Supply voltage monitor",
+  "bidirectional": false,
+  "objects": {
+    "preDefined": [
+      "ILL",
+      "PIRS",
+      "SVC"
+    ],
+    "rssi": {
+      "name": "RSSI",
+      "component": "sensor",
+      "device_class": "signal_strength",
+      "unit": "dBm",
+      "icon": "mdi:wifi",
+      "description": "Signal strength"
+    },
+    "last_seen": {
+      "name": "Last Seen",
+      "component": "sensor",
+      "device_class": "timestamp",
+      "icon": "mdi:clock-outline",
+      "description": "Last telegram received"
+    }
+  },
+  "case": [
+    {
+      "send": false,
+      "datafield": [
+        {
+          "data": "Illumination",
+          "shortcut": "ILL",
+          "bitoffs": "8",
+          "bitsize": "10",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  1
+                ]
+              },
+              0
+            ]
+          },
+          "decimals": 2
+        },
+        {
+          "data": "PIR Status",
+          "shortcut": "PIRS",
+          "bitoffs": "24",
+          "bitsize": "1",
+          "value": {
+            "==": [
+              {
+                "var": "value"
+              },
+              0
+            ]
+          }
+        },
+        {
+          "data": "Supply Voltage 0...5.0V (Optional)",
+          "shortcut": "SVC",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.02
+                ]
+              },
+              0
+            ]
+          },
+          "decimals": 2
+        }
+      ]
+    }
+  ]
+}

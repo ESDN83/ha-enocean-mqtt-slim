@@ -1,0 +1,138 @@
+{
+  "eep": "A5-13-02",
+  "rorg_number": "0xA5",
+  "telegram": "4BS",
+  "func_number": "0x13",
+  "type_number": "0x02",
+  "type_title": "Sun Intensity",
+  "bidirectional": false,
+  "objects": {
+    "preDefined": [
+      "SNW",
+      "SNS",
+      "SNE"
+    ],
+    "HEM": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Hemisphere",
+          "de": "Hemisphäre"
+        },
+        "role": "state",
+        "type": "number",
+        "read": true,
+        "write": false,
+        "states": {
+          "0": "North",
+          "1": "South"
+        },
+        "def": 0
+      },
+      "native": {}
+    },
+    "rssi": {
+      "name": "RSSI",
+      "component": "sensor",
+      "device_class": "signal_strength",
+      "unit": "dBm",
+      "icon": "mdi:wifi",
+      "description": "Signal strength"
+    },
+    "last_seen": {
+      "name": "Last Seen",
+      "component": "sensor",
+      "device_class": "timestamp",
+      "icon": "mdi:clock-outline",
+      "description": "Last telegram received"
+    }
+  },
+  "case": [
+    {
+      "send": false,
+      "datafield": [
+        {
+          "data": "Sun West",
+          "shortcut": "SNW",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.5882
+                ]
+              },
+              0
+            ]
+          }
+        },
+        {
+          "data": "Sun South",
+          "shortcut": "SNS",
+          "bitoffs": "8",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.5882
+                ]
+              },
+              0
+            ]
+          }
+        },
+        {
+          "data": "Sun East",
+          "shortcut": "SNE",
+          "bitoffs": "16",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.5882
+                ]
+              },
+              0
+            ]
+          }
+        },
+        {
+          "data": "Hemisphere",
+          "shortcut": "HEM",
+          "bitoffs": "29",
+          "bitsize": "1",
+          "value": {
+            "var": "value"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,328 @@
+{
+  "eep": "TF-13-01",
+  "rorg_number": "0xA5",
+  "telegram": "4BS",
+  "func_number": "0x13",
+  "type_number": "0x01",
+  "type_title": "FWS61",
+  "bidirectional": true,
+  "objects": {
+    "preDefined": [
+      "TMP",
+      "RAN",
+      "WND",
+      "SNW",
+      "SNS",
+      "SNE"
+    ],
+    "CMD": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Command",
+          "de": "Befehl"
+        },
+        "role": "state",
+        "type": "number",
+        "read": true,
+        "write": true,
+        "states": {
+          "0": "Teach-in"
+        },
+        "def": 0
+      },
+      "native": {}
+    },
+    "DWS": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Dawn sensor",
+          "de": "Morgenlichtsensor"
+        },
+        "role": "value.brightness",
+        "type": "number",
+        "read": true,
+        "write": false,
+        "unit": "lx",
+        "def": 0
+      },
+      "native": {}
+    },
+    "rssi": {
+      "name": "RSSI",
+      "component": "sensor",
+      "device_class": "signal_strength",
+      "unit": "dBm",
+      "icon": "mdi:wifi",
+      "description": "Signal strength"
+    },
+    "last_seen": {
+      "name": "Last Seen",
+      "component": "sensor",
+      "device_class": "timestamp",
+      "icon": "mdi:clock-outline",
+      "description": "Last telegram received"
+    }
+  },
+  "case": [
+    {
+      "send": true,
+      "condition": {
+        "command": [
+          {
+            "bitoffs": "0",
+            "bitsize": "8",
+            "value": 0
+          }
+        ]
+      },
+      "datafield": [
+        {
+          "data": "Command ID",
+          "shortcut": "CMD",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "fixed parameter",
+          "description": "teachin byte 1",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": 76
+        },
+        {
+          "data": "fixed parameter",
+          "description": "teachin byte 2",
+          "bitoffs": "8",
+          "bitsize": "8",
+          "value": 8
+        },
+        {
+          "data": "fixed parameter",
+          "description": "teachin byte 3",
+          "bitoffs": "16",
+          "bitsize": "8",
+          "value": 13
+        },
+        {
+          "data": "fixed parameter",
+          "description": "teachin byte 4",
+          "bitoffs": "24",
+          "bitsize": "8",
+          "value": 128
+        }
+      ]
+    },
+    {
+      "send": false,
+      "condition": {
+        "telegram": [
+          {
+            "bitoffs": "24",
+            "bitsize": "8",
+            "value": {
+              "or": [
+                {
+                  "==": [
+                    {
+                      "var": "value"
+                    },
+                    26
+                  ]
+                },
+                {
+                  "==": [
+                    {
+                      "var": "value"
+                    },
+                    24
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "datafield": [
+        {
+          "data": "Temperature -40...80°C",
+          "shortcut": "TMP",
+          "bitoffs": "8",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.4706
+                ]
+              },
+              -40
+            ]
+          },
+          "decimals": 2
+        },
+        {
+          "data": "Dawn sensor",
+          "shortcut": "DWS",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  3.9219
+                ]
+              },
+              0
+            ]
+          }
+        },
+        {
+          "data": "Wind speed",
+          "shortcut": "WND",
+          "bitoffs": "16",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.2745
+                ]
+              },
+              0
+            ]
+          },
+          "decimals": 2
+        },
+        {
+          "data": "Rain",
+          "shortcut": "RAN",
+          "bitoffs": "24",
+          "bitsize": "8",
+          "value": {
+            "==": [
+              {
+                "var": "value"
+              },
+              26
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "send": false,
+      "condition": {
+        "telegram": [
+          {
+            "bitoffs": "24",
+            "bitsize": "8",
+            "value": 40
+          }
+        ]
+      },
+      "datafield": [
+        {
+          "data": "Sun West",
+          "shortcut": "SNW",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.5882
+                ]
+              },
+              0
+            ]
+          }
+        },
+        {
+          "data": "Sun South",
+          "shortcut": "SNS",
+          "bitoffs": "8",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.5882
+                ]
+              },
+              0
+            ]
+          }
+        },
+        {
+          "data": "Sun East",
+          "shortcut": "SNE",
+          "bitoffs": "16",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.5882
+                ]
+              },
+              0
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

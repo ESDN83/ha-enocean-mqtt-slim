@@ -1,0 +1,119 @@
+{
+  "eep": "TF-13-10",
+  "rorg_number": "0xA5",
+  "telegram": "4BS",
+  "func_number": "0x00",
+  "type_number": "0x00",
+  "type_title": "Brightness sensor 0-50 Lux & 300-30000 Lux",
+  "bidirectional": false,
+  "objects": {
+    "preDefined": [
+      "ILL"
+    ],
+    "rssi": {
+      "name": "RSSI",
+      "component": "sensor",
+      "device_class": "signal_strength",
+      "unit": "dBm",
+      "icon": "mdi:wifi",
+      "description": "Signal strength"
+    },
+    "last_seen": {
+      "name": "Last Seen",
+      "component": "sensor",
+      "device_class": "timestamp",
+      "icon": "mdi:clock-outline",
+      "description": "Last telegram received"
+    }
+  },
+  "case": [
+    {
+      "send": false,
+      "condition": {
+        "range": {
+          "bitoffs": "8",
+          "bitsize": "8",
+          "value": {
+            "==": [
+              {
+                "var": "value"
+              },
+              0
+            ]
+          }
+        }
+      },
+      "datafield": [
+        {
+          "data": "Illumination",
+          "shortcut": "ILL",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.5
+                ]
+              },
+              0
+            ]
+          },
+          "decimals": 0
+        }
+      ]
+    },
+    {
+      "send": false,
+      "condition": {
+        "range": {
+          "bitoffs": "8",
+          "bitsize": "8",
+          "value": {
+            ">=": [
+              {
+                "var": "value"
+              },
+              1
+            ]
+          }
+        }
+      },
+      "datafield": [
+        {
+          "data": "Illumination",
+          "shortcut": "ILL",
+          "bitoffs": "8",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      1
+                    ]
+                  },
+                  116.92913
+                ]
+              },
+              300
+            ]
+          },
+          "decimals": 0
+        }
+      ]
+    }
+  ]
+}

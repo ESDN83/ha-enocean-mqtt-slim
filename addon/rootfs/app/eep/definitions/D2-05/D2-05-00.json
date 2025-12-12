@@ -1,0 +1,590 @@
+{
+  "eep": "D2-05-00",
+  "rorg_number": "0xD2",
+  "telegram": "VLD",
+  "func_number": "0x05",
+  "type_number": "0x00",
+  "type_title": "Blinds control for position and angle type 0x00",
+  "bidirectional": true,
+  "objects": {
+    "CMD": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Command",
+          "de": "Befehl"
+        },
+        "role": "state",
+        "type": "number",
+        "read": true,
+        "write": true,
+        "states": {
+          "1": "Goto Position",
+          "2": "Stop",
+          "3": "QueryPosition and Angle",
+          "4": "ReplyPosition and Angle",
+          "5": "Set parameters",
+          "6": "Goto top",
+          "7": "Goto bottom"
+        },
+        "def": 1
+      },
+      "native": {}
+    },
+    "POS": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Vertical Position",
+          "de": "Vertikale Position"
+        },
+        "role": "state",
+        "type": "number",
+        "read": true,
+        "write": true,
+        "states": {
+          "127": "Do not change / position unknown"
+        },
+        "def": 0,
+        "unit": "%"
+      },
+      "native": {}
+    },
+    "ANG": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Rotation Angle",
+          "de": "Rotationswinkel"
+        },
+        "role": "state",
+        "type": "number",
+        "read": true,
+        "write": true,
+        "states": {
+          "127": "Do not change / position unknown"
+        },
+        "def": 0,
+        "unit": "%"
+      },
+      "native": {}
+    },
+    "REPO": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Repositioning",
+          "de": "Neupositionierung"
+        },
+        "role": "state",
+        "type": "number",
+        "read": true,
+        "write": true,
+        "states": {
+          "0": "Go directly to POS/ANG",
+          "1": "Go up (0%), then to POS/ANG",
+          "2": "Go down (100%), then to POS/ANG"
+        },
+        "def": 0
+      },
+      "native": {}
+    },
+    "LOCK": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Locking modes",
+          "de": "Sperrmodi"
+        },
+        "role": "state",
+        "type": "number",
+        "read": true,
+        "write": true,
+        "states": {
+          "0": "Do not change",
+          "1": "Set blockage mode",
+          "2": "Set alarm mode",
+          "7": "De-blockage"
+        },
+        "def": 0
+      },
+      "native": {}
+    },
+    "CHN": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Channel",
+          "de": "Kanal"
+        },
+        "role": "state",
+        "type": "number",
+        "read": true,
+        "write": true,
+        "states": {
+          "0": "Channel1",
+          "1": "Channel2",
+          "2": "Channel3",
+          "3": "Channel4",
+          "15": "All channels"
+        },
+        "def": 15
+      },
+      "native": {}
+    },
+    "VERT": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Set Vertical",
+          "de": "Setze Vertikal"
+        },
+        "role": "state",
+        "type": "number",
+        "read": true,
+        "write": true,
+        "states": {
+          "32767": "No change"
+        },
+        "def": 32767
+      },
+      "native": {}
+    },
+    "ROT": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Set Rotation",
+          "de": "Setze Rotation"
+        },
+        "role": "state",
+        "type": "number",
+        "read": true,
+        "write": true,
+        "states": {
+          "0": "No rotation",
+          "255": "No change"
+        },
+        "def": 255
+      },
+      "native": {}
+    },
+    "AA": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Set Alarm action",
+          "de": "Setze Alarmaktion"
+        },
+        "role": "state",
+        "type": "number",
+        "read": true,
+        "write": true,
+        "states": {
+          "0": "No action",
+          "1": "Immediate stop",
+          "2": "Go up (0%)",
+          "3": "Go down (100%)",
+          "7": "No change"
+        },
+        "def": 0
+      },
+      "native": {}
+    },
+    "rssi": {
+      "name": "RSSI",
+      "component": "sensor",
+      "device_class": "signal_strength",
+      "unit": "dBm",
+      "icon": "mdi:wifi",
+      "description": "Signal strength"
+    },
+    "last_seen": {
+      "name": "Last Seen",
+      "component": "sensor",
+      "device_class": "timestamp",
+      "icon": "mdi:clock-outline",
+      "description": "Last telegram received"
+    }
+  },
+  "case": [
+    {
+      "send": true,
+      "condition": {
+        "command": [
+          {
+            "bitoffs": "28",
+            "bitsize": "4",
+            "value": 1
+          }
+        ]
+      },
+      "datafield": [
+        {
+          "data": "Command ID",
+          "shortcut": "CMD",
+          "bitoffs": "28",
+          "bitsize": "4",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "Vertical Position",
+          "shortcut": "POS",
+          "bitoffs": "1",
+          "bitsize": "7",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "Rotation Angle",
+          "shortcut": "ANG",
+          "bitoffs": "9",
+          "bitsize": "7",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "Repositioning",
+          "shortcut": "REPO",
+          "bitoffs": "17",
+          "bitsize": "3",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "Locking modes",
+          "shortcut": "LOCK",
+          "bitoffs": "21",
+          "bitsize": "3",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "Channel",
+          "shortcut": "CHN",
+          "bitoffs": "24",
+          "bitsize": "4",
+          "value": {
+            "var": "value"
+          }
+        }
+      ]
+    },
+    {
+      "send": true,
+      "condition": {
+        "command": [
+          {
+            "bitoffs": "4",
+            "bitsize": "4",
+            "value": 2
+          }
+        ]
+      },
+      "datafield": [
+        {
+          "data": "Command ID",
+          "shortcut": "CMD",
+          "bitoffs": "4",
+          "bitsize": "4",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "Channel",
+          "shortcut": "CHN",
+          "bitoffs": "0",
+          "bitsize": "4",
+          "value": {
+            "var": "value"
+          }
+        }
+      ]
+    },
+    {
+      "send": true,
+      "condition": {
+        "command": [
+          {
+            "bitoffs": "4",
+            "bitsize": "4",
+            "value": 3
+          }
+        ]
+      },
+      "datafield": [
+        {
+          "data": "Command ID",
+          "shortcut": "CMD",
+          "bitoffs": "4",
+          "bitsize": "4",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "Channel",
+          "shortcut": "CHN",
+          "bitoffs": "0",
+          "bitsize": "4",
+          "value": {
+            "var": "value"
+          }
+        }
+      ]
+    },
+    {
+      "send": false,
+      "condition": {
+        "command": [
+          {
+            "bitoffs": "28",
+            "bitsize": "4",
+            "value": 4
+          }
+        ]
+      },
+      "datafield": [
+        {
+          "data": "Command ID",
+          "shortcut": "CMD",
+          "bitoffs": "28",
+          "bitsize": "4",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "Vertical Position",
+          "shortcut": "POS",
+          "bitoffs": "1",
+          "bitsize": "7",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "Rotation Angle",
+          "shortcut": "ANG",
+          "bitoffs": "9",
+          "bitsize": "7",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "Locking modes",
+          "shortcut": "LOCK",
+          "bitoffs": "21",
+          "bitsize": "3",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "Channel",
+          "shortcut": "CHN",
+          "bitoffs": "24",
+          "bitsize": "4",
+          "value": {
+            "var": "value"
+          }
+        }
+      ]
+    },
+    {
+      "send": true,
+      "condition": {
+        "command": [
+          {
+            "bitoffs": "36",
+            "bitsize": "4",
+            "value": 5
+          }
+        ]
+      },
+      "datafield": [
+        {
+          "data": "Command ID",
+          "shortcut": "CMD",
+          "bitoffs": "36",
+          "bitsize": "4",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "Set Vertical",
+          "shortcut": "VERT",
+          "bitoffs": "1",
+          "bitsize": "15",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "Set Rotation",
+          "shortcut": "ROT",
+          "bitoffs": "16",
+          "bitsize": "8",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "Set Alarm action",
+          "shortcut": "AA",
+          "bitoffs": "29",
+          "bitsize": "3",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "Channel",
+          "shortcut": "CHN",
+          "bitoffs": "32",
+          "bitsize": "4",
+          "value": {
+            "var": "value"
+          }
+        }
+      ]
+    },
+    {
+      "send": true,
+      "condition": {
+        "command": [
+          {
+            "bitoffs": "28",
+            "bitsize": "4",
+            "value": 6
+          }
+        ]
+      },
+      "datafield": [
+        {
+          "data": "fixed parameter",
+          "description": "Command identifier",
+          "bitoffs": "28",
+          "bitsize": "4",
+          "value": 1
+        },
+        {
+          "data": "fixed parameter",
+          "description": "Vertical Position",
+          "bitoffs": "1",
+          "bitsize": "7",
+          "value": 0
+        },
+        {
+          "data": "Rotation Angle",
+          "shortcut": "ANG",
+          "bitoffs": "9",
+          "bitsize": "7",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "Repositioning",
+          "shortcut": "REPO",
+          "bitoffs": "17",
+          "bitsize": "3",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "Locking modes",
+          "shortcut": "LOCK",
+          "bitoffs": "21",
+          "bitsize": "3",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "Channel",
+          "shortcut": "CHN",
+          "bitoffs": "24",
+          "bitsize": "4",
+          "value": {
+            "var": "value"
+          }
+        }
+      ]
+    },
+    {
+      "send": true,
+      "condition": {
+        "command": [
+          {
+            "bitoffs": "28",
+            "bitsize": "4",
+            "value": 7
+          }
+        ]
+      },
+      "datafield": [
+        {
+          "data": "fixed parameter",
+          "description": "Command identifier",
+          "bitoffs": "28",
+          "bitsize": "4",
+          "value": 1
+        },
+        {
+          "data": "fixed parameter",
+          "description": "Vertical Position",
+          "bitoffs": "1",
+          "bitsize": "7",
+          "value": 100
+        },
+        {
+          "data": "Rotation Angle",
+          "shortcut": "ANG",
+          "bitoffs": "9",
+          "bitsize": "7",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "Repositioning",
+          "shortcut": "REPO",
+          "bitoffs": "17",
+          "bitsize": "3",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "Locking modes",
+          "shortcut": "LOCK",
+          "bitoffs": "21",
+          "bitsize": "3",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "Channel",
+          "shortcut": "CHN",
+          "bitoffs": "24",
+          "bitsize": "4",
+          "value": {
+            "var": "value"
+          }
+        }
+      ]
+    }
+  ]
+}

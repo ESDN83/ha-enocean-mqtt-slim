@@ -1,0 +1,264 @@
+{
+  "eep": "TF-01-02",
+  "rorg_number": "0xA5",
+  "telegram": "4BS",
+  "func_number": "0x3F",
+  "type_number": "0x7F",
+  "type_title": "Switch actuator",
+  "bidirectional": true,
+  "objects": {
+    "CMD": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Command",
+          "de": "Befehl"
+        },
+        "role": "state",
+        "type": "number",
+        "read": true,
+        "write": true,
+        "states": {
+          "0": "Off",
+          "1": "On",
+          "2": "Teach-in",
+          "3": "Teach-in(1)"
+        },
+        "def": 0
+      },
+      "native": {}
+    },
+    "SB": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "State blocked",
+          "de": "Status blockiert"
+        },
+        "role": "state",
+        "type": "number",
+        "read": true,
+        "write": true,
+        "def": 0
+      },
+      "native": {}
+    },
+    "rssi": {
+      "name": "RSSI",
+      "component": "sensor",
+      "device_class": "signal_strength",
+      "unit": "dBm",
+      "icon": "mdi:wifi",
+      "description": "Signal strength"
+    },
+    "last_seen": {
+      "name": "Last Seen",
+      "component": "sensor",
+      "device_class": "timestamp",
+      "icon": "mdi:clock-outline",
+      "description": "Last telegram received"
+    }
+  },
+  "case": [
+    {
+      "send": true,
+      "condition": {
+        "command": [
+          {
+            "bitoffs": "16",
+            "bitsize": "8",
+            "value": 0
+          }
+        ]
+      },
+      "datafield": [
+        {
+          "data": "Command ID",
+          "shortcut": "CMD",
+          "bitoffs": "31",
+          "bitsize": "1",
+          "value": 0
+        },
+        {
+          "data": "State blocked",
+          "shortcut": "SB",
+          "bitoffs": "29",
+          "bitsize": "1",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "fixed parameter",
+          "description": "dummy",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": 1
+        },
+        {
+          "data": "fixed parameter",
+          "description": "dummy",
+          "bitoffs": "8",
+          "bitsize": "8",
+          "value": 0
+        },
+        {
+          "data": "fixed parameter",
+          "description": "dummy",
+          "bitoffs": "16",
+          "bitsize": "8",
+          "value": 0
+        },
+        {
+          "data": "fixed parameter",
+          "description": "Learn bit",
+          "bitoffs": "28",
+          "bitsize": "1",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "send": true,
+      "condition": {
+        "command": [
+          {
+            "bitoffs": "16",
+            "bitsize": "8",
+            "value": 1
+          }
+        ]
+      },
+      "datafield": [
+        {
+          "data": "Command ID",
+          "shortcut": "CMD",
+          "bitoffs": "31",
+          "bitsize": "1",
+          "value": 1
+        },
+        {
+          "data": "State blocked",
+          "shortcut": "SB",
+          "bitoffs": "29",
+          "bitsize": "1",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "fixed parameter",
+          "description": "dummy",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": 1
+        },
+        {
+          "data": "fixed parameter",
+          "description": "dummy",
+          "bitoffs": "8",
+          "bitsize": "8",
+          "value": 0
+        },
+        {
+          "data": "fixed parameter",
+          "description": "dummy",
+          "bitoffs": "16",
+          "bitsize": "8",
+          "value": 0
+        },
+        {
+          "data": "fixed parameter",
+          "description": "Learn bit",
+          "bitoffs": "28",
+          "bitsize": "1",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "send": true,
+      "condition": {
+        "command": [
+          {
+            "bitoffs": "16",
+            "bitsize": "8",
+            "value": 2
+          }
+        ]
+      },
+      "datafield": [
+        {
+          "data": "fixed parameter",
+          "description": "dummy",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": 0
+        },
+        {
+          "data": "fixed parameter",
+          "description": "dummy",
+          "bitoffs": "8",
+          "bitsize": "8",
+          "value": 0
+        },
+        {
+          "data": "fixed parameter",
+          "description": "dummy",
+          "bitoffs": "16",
+          "bitsize": "8",
+          "value": 0
+        },
+        {
+          "data": "fixed parameter",
+          "description": "Learn bit",
+          "bitoffs": "24",
+          "bitsize": "8",
+          "value": 40
+        }
+      ]
+    },
+    {
+      "send": true,
+      "condition": {
+        "command": [
+          {
+            "bitoffs": "16",
+            "bitsize": "8",
+            "value": 3
+          }
+        ]
+      },
+      "datafield": [
+        {
+          "data": "fixed parameter",
+          "description": "dummy",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": 224
+        },
+        {
+          "data": "fixed parameter",
+          "description": "dummy",
+          "bitoffs": "8",
+          "bitsize": "8",
+          "value": 64
+        },
+        {
+          "data": "fixed parameter",
+          "description": "dummy",
+          "bitoffs": "16",
+          "bitsize": "8",
+          "value": 13
+        },
+        {
+          "data": "fixed parameter",
+          "description": "Learn bit",
+          "bitoffs": "24",
+          "bitsize": "8",
+          "value": 128
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "eep": "A5-04-02",
+  "rorg_number": "0xA5",
+  "telegram": "4BS",
+  "func_number": "0x04",
+  "type_number": "0x02",
+  "type_title": "Temperature and humidity Sensor Range -20°C to +60°C and 0% to 100%",
+  "bidirectional": false,
+  "objects": {
+    "preDefined": [
+      "TMP",
+      "HM"
+    ],
+    "rssi": {
+      "name": "RSSI",
+      "component": "sensor",
+      "device_class": "signal_strength",
+      "unit": "dBm",
+      "icon": "mdi:wifi",
+      "description": "Signal strength"
+    },
+    "last_seen": {
+      "name": "Last Seen",
+      "component": "sensor",
+      "device_class": "timestamp",
+      "icon": "mdi:clock-outline",
+      "description": "Last telegram received"
+    }
+  },
+  "case": [
+    {
+      "send": false,
+      "condition": {
+        "t_sensor": {
+          "bitoffs": "30",
+          "bitsize": "1",
+          "value": 1
+        }
+      },
+      "datafield": [
+        {
+          "data": "Temperature -20...60°C",
+          "shortcut": "TMP",
+          "bitoffs": "16",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.32
+                ]
+              },
+              -20
+            ]
+          },
+          "decimals": 2
+        },
+        {
+          "data": "Humidity 0...100%",
+          "shortcut": "HM",
+          "bitoffs": "8",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.4
+                ]
+              },
+              0
+            ]
+          },
+          "decimals": 2
+        }
+      ]
+    },
+    {
+      "send": false,
+      "condition": {
+        "t_sensor": {
+          "bitoffs": "30",
+          "bitsize": "1",
+          "value": 0
+        }
+      },
+      "datafield": [
+        {
+          "data": "Humidity 0...100%",
+          "shortcut": "HM",
+          "bitoffs": "8",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.4
+                ]
+              },
+              0
+            ]
+          },
+          "decimals": 2
+        }
+      ]
+    }
+  ]
+}

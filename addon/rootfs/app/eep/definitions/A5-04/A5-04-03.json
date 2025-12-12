@@ -1,0 +1,87 @@
+{
+  "eep": "A5-04-03",
+  "rorg_number": "0xA5",
+  "telegram": "4BS",
+  "func_number": "0x04",
+  "type_number": "0x03",
+  "type_title": "Temperature and humidity Sensor Range -20°C to +60°C and 0% to 100%",
+  "bidirectional": false,
+  "objects": {
+    "preDefined": [
+      "TMP",
+      "HUM"
+    ],
+    "rssi": {
+      "name": "RSSI",
+      "component": "sensor",
+      "device_class": "signal_strength",
+      "unit": "dBm",
+      "icon": "mdi:wifi",
+      "description": "Signal strength"
+    },
+    "last_seen": {
+      "name": "Last Seen",
+      "component": "sensor",
+      "device_class": "timestamp",
+      "icon": "mdi:clock-outline",
+      "description": "Last telegram received"
+    }
+  },
+  "case": [
+    {
+      "send": false,
+      "datafield": [
+        {
+          "data": "Temperature -20...60°C",
+          "shortcut": "TMP",
+          "bitoffs": "14",
+          "bitsize": "10",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.0782
+                ]
+              },
+              -20
+            ]
+          },
+          "decimals": 1
+        },
+        {
+          "data": "Humidity 0...100%",
+          "shortcut": "HUM",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.4
+                ]
+              },
+              0
+            ]
+          },
+          "decimals": 1
+        }
+      ]
+    }
+  ]
+}

@@ -1,15 +1,27 @@
 {
-  "eep": "MV-01-01",
-  "rorg_number": "0xA5",
-  "telegram": "4BS",
-  "func_number": "0x01",
-  "type_number": "0x01",
-  "type_title": "Kessel Staufix Control",
+  "eep": "TF-13-16",
+  "rorg_number": "0xF6",
+  "telegram": "RPS",
+  "func_number": "0x00",
+  "type_number": "0x00",
+  "type_title": "FKF65 Key Card switch",
   "bidirectional": false,
   "objects": {
-    "preDefined": [
-      "AL"
-    ],
+    "KC": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Key Card inserted",
+          "de": "Key Card eingesteckt"
+        },
+        "role": "switch",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false
+      },
+      "native": {}
+    },
     "rssi": {
       "name": "RSSI",
       "component": "sensor",
@@ -29,26 +41,14 @@
   "case": [
     {
       "send": false,
-      "condition": [
-        {
-          "bitoffs": "0",
-          "bitsize": "8",
-          "value": 1
-        }
-      ],
       "datafield": [
         {
-          "data": "Alarm",
-          "shortcut": "AL",
-          "bitoffs": "29",
-          "bitsize": "1",
+          "data": "Key Card",
+          "shortcut": "KC",
+          "bitoffs": "0",
+          "bitsize": "8",
           "value": {
-            "==": [
-              {
-                "var": "value"
-              },
-              1
-            ]
+            "var": "value"
           }
         }
       ]

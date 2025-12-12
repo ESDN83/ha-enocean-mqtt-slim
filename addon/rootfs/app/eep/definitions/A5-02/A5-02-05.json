@@ -1,14 +1,14 @@
 {
-  "eep": "MV-01-01",
+  "eep": "A5-02-05",
   "rorg_number": "0xA5",
   "telegram": "4BS",
-  "func_number": "0x01",
-  "type_number": "0x01",
-  "type_title": "Kessel Staufix Control",
+  "func_number": "0x02",
+  "type_number": "0x05",
+  "type_title": "Temperature Sensor Range 0°C to +40°C",
   "bidirectional": false,
   "objects": {
     "preDefined": [
-      "AL"
+      "TMP"
     ],
     "rssi": {
       "name": "RSSI",
@@ -29,27 +29,31 @@
   "case": [
     {
       "send": false,
-      "condition": [
-        {
-          "bitoffs": "0",
-          "bitsize": "8",
-          "value": 1
-        }
-      ],
       "datafield": [
         {
-          "data": "Alarm",
-          "shortcut": "AL",
-          "bitoffs": "29",
-          "bitsize": "1",
+          "data": "Temperature 0...40°C",
+          "shortcut": "TMP",
+          "bitoffs": "16",
+          "bitsize": "8",
           "value": {
-            "==": [
+            "+": [
               {
-                "var": "value"
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      255
+                    ]
+                  },
+                  -0.1569
+                ]
               },
-              1
+              0
             ]
-          }
+          },
+          "decimals": 2
         }
       ]
     }

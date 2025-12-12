@@ -1,0 +1,96 @@
+{
+  "eep": "A5-10-12",
+  "rorg_number": "0xA5",
+  "telegram": "4BS",
+  "func_number": "0x10",
+  "type_number": "0x12",
+  "type_title": "Room Operating Panel Temperature, Humidity and Set point",
+  "bidirectional": false,
+  "objects": {
+    "preDefined": [
+      "TMP",
+      "SP",
+      "HUM"
+    ],
+    "rssi": {
+      "name": "RSSI",
+      "component": "sensor",
+      "device_class": "signal_strength",
+      "unit": "dBm",
+      "icon": "mdi:wifi",
+      "description": "Signal strength"
+    },
+    "last_seen": {
+      "name": "Last Seen",
+      "component": "sensor",
+      "device_class": "timestamp",
+      "icon": "mdi:clock-outline",
+      "description": "Last telegram received"
+    }
+  },
+  "case": [
+    {
+      "send": false,
+      "datafield": [
+        {
+          "data": "Humidity",
+          "shortcut": "HUM",
+          "bitoffs": "8",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.4
+                ]
+              },
+              0
+            ]
+          }
+        },
+        {
+          "data": "Temperature",
+          "shortcut": "TMP",
+          "bitoffs": "16",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.156862745
+                ]
+              },
+              0
+            ]
+          },
+          "decimals": 2
+        },
+        {
+          "data": "Set point",
+          "shortcut": "SP",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": {
+            "var": "value"
+          }
+        }
+      ]
+    }
+  ]
+}

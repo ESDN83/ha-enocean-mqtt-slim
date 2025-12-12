@@ -1,0 +1,325 @@
+{
+  "eep": "D2-06-11",
+  "rorg_number": "0xD2",
+  "telegram": "VLD",
+  "func_number": "0x06",
+  "type_number": "0x11",
+  "type_title": "Multisensor Window Intrusion detection system for Windows",
+  "bidirectional": true,
+  "objects": {
+    "preDefined": [
+      "AL"
+    ],
+    "CMD": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Command",
+          "de": "Befehl"
+        },
+        "role": "state",
+        "type": "number",
+        "read": true,
+        "write": true,
+        "states": {
+          "0": "Send Settings"
+        },
+        "def": 0
+      },
+      "native": {}
+    },
+    "AE": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Alarm status",
+          "de": "Alarm Status"
+        },
+        "role": "state",
+        "type": "boolean",
+        "read": true,
+        "write": true,
+        "def": true
+      },
+      "native": {}
+    },
+    "EPA": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Enable Pre-Alarm",
+          "de": "Voralarm einschalten"
+        },
+        "role": "state",
+        "type": "boolean",
+        "read": true,
+        "write": true,
+        "def": true
+      },
+      "native": {}
+    },
+    "SPIR": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Set PIR sensitivity",
+          "de": "PIR Empfindlichkeit einstellen"
+        },
+        "role": "state",
+        "type": "number",
+        "read": true,
+        "write": true,
+        "states": {
+          "0": "No change",
+          "1": "Normal sensitivity",
+          "2": "Low sensitivity"
+        },
+        "def": 0
+      },
+      "native": {}
+    },
+    "PA": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Pre-Alarm",
+          "de": "Voralarm"
+        },
+        "role": "state",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false
+      },
+      "native": {}
+    },
+    "CT": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Window open",
+          "de": "Fenster offen"
+        },
+        "role": "state",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false
+      },
+      "native": {}
+    },
+    "PAE": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Pre-Alarm enabled",
+          "de": "Voralarm aktiviert"
+        },
+        "role": "state",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": true
+      },
+      "native": {}
+    },
+    "TP": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Tilt position",
+          "de": "Kippstellung"
+        },
+        "role": "state",
+        "type": "number",
+        "read": true,
+        "write": true,
+        "states": {
+          "0": "Unknown",
+          "1": "Tilt",
+          "2": "Not tilt"
+        },
+        "def": 0
+      },
+      "native": {}
+    },
+    "PIR": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "PIR sensitivity",
+          "de": "PIR Empfindlichkeit"
+        },
+        "role": "state",
+        "type": "number",
+        "read": true,
+        "write": true,
+        "states": {
+          "0": "Normal sensitivity",
+          "1": "Low sensitivity"
+        },
+        "def": 0
+      },
+      "native": {}
+    },
+    "rssi": {
+      "name": "RSSI",
+      "component": "sensor",
+      "device_class": "signal_strength",
+      "unit": "dBm",
+      "icon": "mdi:wifi",
+      "description": "Signal strength"
+    },
+    "last_seen": {
+      "name": "Last Seen",
+      "component": "sensor",
+      "device_class": "timestamp",
+      "icon": "mdi:clock-outline",
+      "description": "Last telegram received"
+    }
+  },
+  "case": [
+    {
+      "send": true,
+      "auto_answer": true,
+      "condition": {
+        "command": [
+          {
+            "value": 0
+          }
+        ]
+      },
+      "datafield": [
+        {
+          "data": "Alarm enabled",
+          "shortcut": "AE",
+          "bitoffs": "0",
+          "bitsize": "1",
+          "value_out": {
+            "if": [
+              {
+                "var": "value"
+              },
+              1,
+              0
+            ]
+          }
+        },
+        {
+          "data": "Enable Pre-Alarm",
+          "shortcut": "EPA",
+          "bitoffs": "3",
+          "bitsize": "1",
+          "value": {
+            "==": [
+              {
+                "var": "value"
+              },
+              1
+            ]
+          },
+          "value_out": {
+            "if": [
+              {
+                "var": "value"
+              },
+              1,
+              0
+            ]
+          }
+        },
+        {
+          "data": "Set PIR senstivity",
+          "shortcut": "SPIR",
+          "bitoffs": "4",
+          "bitsize": "2",
+          "value": {
+            "var": "value"
+          },
+          "value_out": {
+            "var": "value"
+          }
+        }
+      ]
+    },
+    {
+      "send": false,
+      "datafield": [
+        {
+          "data": "Pre-Alarm",
+          "shortcut": "PA",
+          "bitoffs": "0",
+          "bitsize": "1",
+          "value": {
+            "==": [
+              {
+                "var": "value"
+              },
+              1
+            ]
+          }
+        },
+        {
+          "data": "Alarm",
+          "shortcut": "AL",
+          "bitoffs": "1",
+          "bitsize": "1",
+          "value": {
+            "==": [
+              {
+                "var": "value"
+              },
+              1
+            ]
+          }
+        },
+        {
+          "data": "Window open",
+          "shortcut": "CT",
+          "bitoffs": "2",
+          "bitsize": "1",
+          "value": {
+            "==": [
+              {
+                "var": "value"
+              },
+              0
+            ]
+          }
+        },
+        {
+          "data": "Pre-Alarm enabled",
+          "shortcut": "PAE",
+          "bitoffs": "3",
+          "bitsize": "1",
+          "value": {
+            "==": [
+              {
+                "var": "value"
+              },
+              1
+            ]
+          }
+        },
+        {
+          "data": "Tilt position",
+          "shortcut": "TP",
+          "bitoffs": "4",
+          "bitsize": "2",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "PIR senstivity",
+          "shortcut": "PIR",
+          "bitoffs": "6",
+          "bitsize": "1",
+          "value": {
+            "var": "value"
+          }
+        }
+      ]
+    }
+  ]
+}

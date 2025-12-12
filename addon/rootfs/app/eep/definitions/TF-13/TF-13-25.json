@@ -1,0 +1,244 @@
+{
+  "eep": "TF-13-25",
+  "rorg_number": "0xA5",
+  "telegram": "4BS",
+  "func_number": "0x00",
+  "type_number": "0x00",
+  "type_title": "FSDG14, FWZ14, FWZ12, DSZ14DRS, DSZ14WDRS",
+  "bidirectional": false,
+  "objects": {
+    "DMR": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Day Meter Reading",
+          "de": "Tageszählerstand"
+        },
+        "role": "value.power.consumption",
+        "type": "number",
+        "read": true,
+        "write": false,
+        "def": 0,
+        "unit": "kWh"
+      },
+      "native": {}
+    },
+    "NMR": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Night Meter Reading",
+          "de": "Nachtzählerstand"
+        },
+        "role": "value.power.consumption",
+        "type": "number",
+        "read": true,
+        "write": false,
+        "def": 0,
+        "unit": "kWh"
+      },
+      "native": {}
+    },
+    "TI": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Tariff info",
+          "de": "Tarif-Info"
+        },
+        "role": "state",
+        "type": "number",
+        "read": true,
+        "write": false,
+        "states": {
+          "0": "Day",
+          "1": "Night"
+        },
+        "def": 0
+      },
+      "native": {}
+    },
+    "PC": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Power consumption",
+          "de": "Stromverbrauch"
+        },
+        "role": "value.power",
+        "type": "number",
+        "read": true,
+        "write": false,
+        "def": 0,
+        "unit": "W"
+      },
+      "native": {}
+    },
+    "rssi": {
+      "name": "RSSI",
+      "component": "sensor",
+      "device_class": "signal_strength",
+      "unit": "dBm",
+      "icon": "mdi:wifi",
+      "description": "Signal strength"
+    },
+    "last_seen": {
+      "name": "Last Seen",
+      "component": "sensor",
+      "device_class": "timestamp",
+      "icon": "mdi:clock-outline",
+      "description": "Last telegram received"
+    }
+  },
+  "case": [
+    {
+      "send": false,
+      "condition": {
+        "DMR": [
+          {
+            "bitoffs": "31",
+            "bitsize": "1",
+            "value": 1
+          },
+          {
+            "bitoffs": "30",
+            "bitsize": "1",
+            "value": 0
+          },
+          {
+            "bitoffs": "29",
+            "bitsize": "1",
+            "value": 0
+          },
+          {
+            "bitoffs": "27",
+            "bitsize": "1",
+            "value": 0
+          }
+        ]
+      },
+      "datafield": [
+        {
+          "data": "Day Meter Reading",
+          "shortcut": "DMR",
+          "bitoffs": "0",
+          "bitsize": "24",
+          "value": {
+            "/": [
+              {
+                "var": "value"
+              },
+              10
+            ]
+          },
+          "unit": "kWh"
+        },
+        {
+          "data": "Tariff info",
+          "shortcut": "TI",
+          "bitoffs": "27",
+          "bitsize": "1",
+          "value": {
+            "var": "value"
+          }
+        }
+      ]
+    },
+    {
+      "send": false,
+      "condition": {
+        "NMR": [
+          {
+            "bitoffs": "31",
+            "bitsize": "1",
+            "value": 1
+          },
+          {
+            "bitoffs": "30",
+            "bitsize": "1",
+            "value": 0
+          },
+          {
+            "bitoffs": "29",
+            "bitsize": "1",
+            "value": 0
+          },
+          {
+            "bitoffs": "27",
+            "bitsize": "1",
+            "value": 1
+          }
+        ]
+      },
+      "datafield": [
+        {
+          "data": "Night Meter Reading",
+          "shortcut": "NMR",
+          "bitoffs": "0",
+          "bitsize": "24",
+          "value": {
+            "/": [
+              {
+                "var": "value"
+              },
+              10
+            ]
+          },
+          "unit": "kWh"
+        },
+        {
+          "data": "Tariff info",
+          "shortcut": "TI",
+          "bitoffs": "27",
+          "bitsize": "1",
+          "value": {
+            "var": "value"
+          }
+        }
+      ]
+    },
+    {
+      "send": false,
+      "condition": {
+        "PC": [
+          {
+            "bitoffs": "31",
+            "bitsize": "1",
+            "value": 0
+          },
+          {
+            "bitoffs": "30",
+            "bitsize": "1",
+            "value": 0
+          },
+          {
+            "bitoffs": "29",
+            "bitsize": "1",
+            "value": 1
+          }
+        ]
+      },
+      "datafield": [
+        {
+          "data": "Power consumption",
+          "shortcut": "PC",
+          "bitoffs": "0",
+          "bitsize": "24",
+          "value": {
+            "var": "value"
+          },
+          "unit": "W"
+        },
+        {
+          "data": "Tariff info",
+          "shortcut": "TI",
+          "bitoffs": "27",
+          "bitsize": "1",
+          "value": {
+            "var": "value"
+          }
+        }
+      ]
+    }
+  ]
+}

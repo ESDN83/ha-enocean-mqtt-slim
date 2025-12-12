@@ -1,0 +1,147 @@
+{
+  "eep": "A5-10-01",
+  "rorg_number": "0xA5",
+  "telegram": "4BS",
+  "func_number": "0x10",
+  "type_number": "0x01",
+  "type_title": "Room Operating Panel Temperature, Set point, Fan Speed and Occupancy control",
+  "bidirectional": false,
+  "objects": {
+    "preDefined": [
+      "TMP",
+      "SP",
+      "OCC",
+      "FAN"
+    ],
+    "rssi": {
+      "name": "RSSI",
+      "component": "sensor",
+      "device_class": "signal_strength",
+      "unit": "dBm",
+      "icon": "mdi:wifi",
+      "description": "Signal strength"
+    },
+    "last_seen": {
+      "name": "Last Seen",
+      "component": "sensor",
+      "device_class": "timestamp",
+      "icon": "mdi:clock-outline",
+      "description": "Last telegram received"
+    }
+  },
+  "case": [
+    {
+      "send": false,
+      "datafield": [
+        {
+          "data": "Turn-switch for fan speed",
+          "shortcut": "FAN",
+          "bitoffs": "8",
+          "bitsize": "8",
+          "value": {
+            "if": [
+              {
+                "<=": [
+                  210,
+                  {
+                    "var": "value"
+                  },
+                  255
+                ]
+              },
+              0,
+              {
+                "<=": [
+                  190,
+                  {
+                    "var": "value"
+                  },
+                  209
+                ]
+              },
+              1,
+              {
+                "<=": [
+                  165,
+                  {
+                    "var": "value"
+                  },
+                  189
+                ]
+              },
+              2,
+              {
+                "<=": [
+                  145,
+                  {
+                    "var": "value"
+                  },
+                  164
+                ]
+              },
+              3,
+              {
+                "<=": [
+                  0,
+                  {
+                    "var": "value"
+                  },
+                  144
+                ]
+              },
+              4
+            ]
+          }
+        },
+        {
+          "data": "Temperature",
+          "shortcut": "TMP",
+          "bitoffs": "16",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.156862745
+                ]
+              },
+              0
+            ]
+          },
+          "decimals": 2
+        },
+        {
+          "data": "Set point",
+          "shortcut": "SP",
+          "bitoffs": "8",
+          "bitsize": "8",
+          "value": {
+            "var": "value"
+          }
+        },
+        {
+          "data": "Occupancy Button pressed",
+          "shortcut": "OCC",
+          "bitoffs": "31",
+          "bitsize": "1",
+          "value": {
+            "==": [
+              {
+                "var": "value"
+              },
+              1
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

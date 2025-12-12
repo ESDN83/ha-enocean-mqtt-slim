@@ -1,0 +1,195 @@
+{
+  "eep": "A5-09-02",
+  "rorg_number": "0xA5",
+  "telegram": "4BS",
+  "func_number": "0x09",
+  "type_number": "0x02",
+  "type_title": "Gas Sensor CO-Sensor 0ppm to 1020ppm",
+  "bidirectional": false,
+  "objects": {
+    "preDefined": [
+      "TMP",
+      "SVC"
+    ],
+    "Conc": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Gas concentration",
+          "de": "Gas-Konzentration"
+        },
+        "role": "value.gas",
+        "type": "number",
+        "read": true,
+        "write": false,
+        "def": 0,
+        "unit": "ppm"
+      },
+      "native": {}
+    },
+    "rssi": {
+      "name": "RSSI",
+      "component": "sensor",
+      "device_class": "signal_strength",
+      "unit": "dBm",
+      "icon": "mdi:wifi",
+      "description": "Signal strength"
+    },
+    "last_seen": {
+      "name": "Last Seen",
+      "component": "sensor",
+      "device_class": "timestamp",
+      "icon": "mdi:clock-outline",
+      "description": "Last telegram received"
+    }
+  },
+  "case": [
+    {
+      "send": false,
+      "condition": {
+        "t_sensor": {
+          "bitoffs": "30",
+          "bitsize": "1",
+          "value": 0
+        }
+      },
+      "datafield": [
+        {
+          "data": "Gas concentration",
+          "shortcut": "Conc",
+          "bitoffs": "8",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  4
+                ]
+              },
+              0
+            ]
+          }
+        },
+        {
+          "data": "Supply voltage 0…5.1V",
+          "shortcut": "SVC",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.02
+                ]
+              },
+              0
+            ]
+          },
+          "decimals": 2
+        }
+      ]
+    },
+    {
+      "send": false,
+      "condition": {
+        "t_sensor": {
+          "bitoffs": "30",
+          "bitsize": "1",
+          "value": 1
+        }
+      },
+      "datafield": [
+        {
+          "data": "Temperature 0...51°C",
+          "shortcut": "TMP",
+          "bitoffs": "16",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.2
+                ]
+              },
+              0
+            ]
+          },
+          "decimals": 2
+        },
+        {
+          "data": "Gas concentration",
+          "shortcut": "Conc",
+          "bitoffs": "8",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  4
+                ]
+              },
+              0
+            ]
+          }
+        },
+        {
+          "data": "Supply voltage 0…5.1V",
+          "shortcut": "SVC",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.02
+                ]
+              },
+              0
+            ]
+          },
+          "decimals": 2
+        }
+      ]
+    }
+  ]
+}

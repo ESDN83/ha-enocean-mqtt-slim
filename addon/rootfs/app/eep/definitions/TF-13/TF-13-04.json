@@ -1,0 +1,157 @@
+{
+  "eep": "TF-13-04",
+  "rorg_number": "0xF6",
+  "telegram": "RPS",
+  "func_number": "0x00",
+  "type_number": "0x00",
+  "type_title": "Rollershutter state",
+  "bidirectional": false,
+  "objects": {
+    "TOP": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Top end position",
+          "de": "Obere Endposition"
+        },
+        "role": "switch",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false,
+        "desc": {
+          "en": "Will be set only if the actor was running the full time which is set on the actor itself. If the actor was stopped before the full time was reached, this state will not be set.",
+          "de": "Wird nur gesetzt, wenn der Aktor die volle Zeit, die auf dem Aktor selbst eingestellt ist, durchgelaufen ist. Wird der Aktor vor Ablauf der vollen Zeit gestoppt, wird dieser Zustand nicht gesetzt."
+        }
+      },
+      "native": {}
+    },
+    "BOT": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Bottom end position",
+          "de": "Untere Endposition"
+        },
+        "role": "switch",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false,
+        "desc": {
+          "en": "Will be set only if the actor was running the full time which is set on the actor itself. If the actor was stopped before the full time was reached, this state will not be set.",
+          "de": "Wird nur gesetzt, wenn der Aktor die volle Zeit, die auf dem Aktor selbst eingestellt ist, durchgelaufen ist. Wird der Aktor vor Ablauf der vollen Zeit gestoppt, wird dieser Zustand nicht gesetzt."
+        }
+      },
+      "native": {}
+    },
+    "UP": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Move up",
+          "de": "Hochfahren"
+        },
+        "role": "switch",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false
+      },
+      "native": {}
+    },
+    "DO": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Move down",
+          "de": "Runterfahren"
+        },
+        "role": "switch",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false
+      },
+      "native": {}
+    },
+    "rssi": {
+      "name": "RSSI",
+      "component": "sensor",
+      "device_class": "signal_strength",
+      "unit": "dBm",
+      "icon": "mdi:wifi",
+      "description": "Signal strength"
+    },
+    "last_seen": {
+      "name": "Last Seen",
+      "component": "sensor",
+      "device_class": "timestamp",
+      "icon": "mdi:clock-outline",
+      "description": "Last telegram received"
+    }
+  },
+  "case": [
+    {
+      "send": false,
+      "datafield": [
+        {
+          "data": "Top end position",
+          "shortcut": "TOP",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": {
+            "==": [
+              {
+                "var": "value"
+              },
+              112
+            ]
+          }
+        },
+        {
+          "data": "Bottom end position",
+          "shortcut": "BOT",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": {
+            "==": [
+              {
+                "var": "value"
+              },
+              80
+            ]
+          }
+        },
+        {
+          "data": "Move up",
+          "shortcut": "UP",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": {
+            "==": [
+              {
+                "var": "value"
+              },
+              1
+            ]
+          }
+        },
+        {
+          "data": "Move down",
+          "shortcut": "DO",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": {
+            "==": [
+              {
+                "var": "value"
+              },
+              2
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "eep": "A5-14-09",
+  "rorg_number": "0xA5",
+  "telegram": "4BS",
+  "func_number": "0x14",
+  "type_number": "0x09",
+  "type_title": "Multi-Func Sensor Window/Door with states Open/Closed/Tilt, supply voltage monitor",
+  "bidirectional": false,
+  "objects": {
+    "preDefined": [
+      "SVC"
+    ],
+    "OP": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Open",
+          "de": "Offen"
+        },
+        "role": "sensor.window",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false
+      },
+      "native": {}
+    },
+    "TL": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Tilt",
+          "de": "Neigung"
+        },
+        "role": "sensor.window",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false
+      },
+      "native": {}
+    },
+    "rssi": {
+      "name": "RSSI",
+      "component": "sensor",
+      "device_class": "signal_strength",
+      "unit": "dBm",
+      "icon": "mdi:wifi",
+      "description": "Signal strength"
+    },
+    "last_seen": {
+      "name": "Last Seen",
+      "component": "sensor",
+      "device_class": "timestamp",
+      "icon": "mdi:clock-outline",
+      "description": "Last telegram received"
+    }
+  },
+  "case": [
+    {
+      "send": false,
+      "datafield": [
+        {
+          "data": "Open",
+          "shortcut": "OP",
+          "bitoffs": "29",
+          "bitsize": "2",
+          "value": {
+            "==": [
+              {
+                "var": "value"
+              },
+              3
+            ]
+          }
+        },
+        {
+          "data": "Tilt",
+          "shortcut": "TL",
+          "bitoffs": "29",
+          "bitsize": "2",
+          "value": {
+            "==": [
+              {
+                "var": "value"
+              },
+              1
+            ]
+          }
+        },
+        {
+          "data": "Supply Voltage 0...5.0V (Optional)",
+          "shortcut": "SVC",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.02
+                ]
+              },
+              0
+            ]
+          },
+          "decimals": 2
+        }
+      ]
+    }
+  ]
+}

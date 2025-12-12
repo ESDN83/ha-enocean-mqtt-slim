@@ -1,0 +1,135 @@
+{
+  "eep": "A5-09-0A",
+  "rorg_number": "0xA5",
+  "telegram": "4BS",
+  "func_number": "0x09",
+  "type_number": "0x0A",
+  "type_title": "Gas Sensor Hydrogen",
+  "bidirectional": false,
+  "objects": {
+    "preDefined": [
+      "TMP",
+      "SVC"
+    ],
+    "Conc": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Hydrogen concentration",
+          "de": "Konzentration von Wasserstoff"
+        },
+        "role": "value.gas",
+        "type": "number",
+        "read": true,
+        "write": false,
+        "def": 0,
+        "unit": "ppm"
+      },
+      "native": {}
+    },
+    "rssi": {
+      "name": "RSSI",
+      "component": "sensor",
+      "device_class": "signal_strength",
+      "unit": "dBm",
+      "icon": "mdi:wifi",
+      "description": "Signal strength"
+    },
+    "last_seen": {
+      "name": "Last Seen",
+      "component": "sensor",
+      "device_class": "timestamp",
+      "icon": "mdi:clock-outline",
+      "description": "Last telegram received"
+    }
+  },
+  "case": [
+    {
+      "send": false,
+      "datafield": [
+        {
+          "data": "Hydrogen concentration",
+          "shortcut": "Conc",
+          "bitoffs": "0",
+          "bitsize": "16",
+          "value": {
+            "var": "value"
+          }
+        }
+      ]
+    },
+    {
+      "send": false,
+      "condition": {
+        "tsa": {
+          "bitoffs": "30",
+          "bitsize": "1",
+          "value": 1
+        }
+      },
+      "datafield": [
+        {
+          "data": "Temperature -20...60°C",
+          "shortcut": "TMP",
+          "bitoffs": "16",
+          "bitsize": "8",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.3137
+                ]
+              },
+              -20
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "send": false,
+      "condition": {
+        "sva": {
+          "bitoffs": "31",
+          "bitsize": "1",
+          "value": 1
+        }
+      },
+      "datafield": [
+        {
+          "data": "Supply Voltage 2.0...5.0V",
+          "shortcut": "SVC",
+          "bitoffs": "24",
+          "bitsize": "4",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.2
+                ]
+              },
+              2
+            ]
+          },
+          "decimals": 2
+        }
+      ]
+    }
+  ]
+}

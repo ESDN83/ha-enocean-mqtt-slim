@@ -1,15 +1,27 @@
 {
-  "eep": "MV-01-01",
+  "eep": "TF-13-15",
   "rorg_number": "0xA5",
   "telegram": "4BS",
-  "func_number": "0x01",
-  "type_number": "0x01",
-  "type_title": "Kessel Staufix Control",
+  "func_number": "0x00",
+  "type_number": "0x00",
+  "type_title": "Room Operating Panel ON/OFF",
   "bidirectional": false,
   "objects": {
-    "preDefined": [
-      "AL"
-    ],
+    "ST": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "ON",
+          "de": "EIN"
+        },
+        "role": "switch",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false
+      },
+      "native": {}
+    },
     "rssi": {
       "name": "RSSI",
       "component": "sensor",
@@ -29,18 +41,11 @@
   "case": [
     {
       "send": false,
-      "condition": [
-        {
-          "bitoffs": "0",
-          "bitsize": "8",
-          "value": 1
-        }
-      ],
       "datafield": [
         {
-          "data": "Alarm",
-          "shortcut": "AL",
-          "bitoffs": "29",
+          "data": "State",
+          "shortcut": "ST",
+          "bitoffs": "31",
           "bitsize": "1",
           "value": {
             "==": [

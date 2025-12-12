@@ -1,5 +1,63 @@
 # Changelog
 
+## [1.0.12] - 2025-12-12
+
+### Added
+- **152 EEP Profiles!** - Massive expansion from 1 to 152 supported profiles
+- Imported all profiles from ioBroker.enocean library
+- RSSI and timestamp sensors added to ALL profiles automatically
+- Support for 36 profile families
+
+### Profile Families Included
+- **A5-02**: 25 temperature sensor profiles
+- **A5-04**: 3 humidity sensor profiles  
+- **A5-05**: 1 barometric sensor profile
+- **A5-06**: 3 light sensor profiles
+- **A5-07**: 3 occupancy sensor profiles
+- **A5-08**: 3 light/temp/occupancy profiles
+- **A5-09**: 9 gas sensor profiles
+- **A5-10**: 16 room control profiles
+- **A5-11**: 2 controller status profiles
+- **A5-12**: 3 automated meter reading profiles
+- **A5-13**: 2 environmental sensor profiles
+- **A5-14**: 4 multi-function sensor profiles
+- **A5-20**: 3 HVAC profiles
+- **A5-30**: 1 digital input profile
+- **A5-38**: 1 gateway profile
+- **D0-00**: 1 contact profile
+- **D2-01**: 5 electronic switch profiles
+- **D2-03**: 1 push button profile
+- **D2-05**: 1 blinds control profile
+- **D2-06**: 4 multisensor profiles
+- **D2-10**: 1 room control profile
+- **D2-14**: 1 multi-function profile
+- **D2-50**: 1 heat recovery profile
+- **D5-00**: 1 contact sensor profile
+- **F6-01**: 1 push button profile
+- **F6-02**: 2 rocker switch profiles
+- **F6-04**: 1 key card profile
+- **F6-05**: 2 wind sensor profiles
+- **F6-10**: 1 window handle profile
+- **I1-01**: 1 infrared message profile
+- **MV-01**: 6 manufacturer-specific profiles (Kessel, etc.)
+- **PE-01**: 2 manufacturer profiles
+- **TF-01**: 3 manufacturer profiles
+- **TF-13**: 28 manufacturer profiles
+- **TF-14**: 7 manufacturer profiles
+- **X1-01**: 3 manufacturer profiles
+
+### Technical Details
+- Created automated conversion script
+- All profiles include rssi and last_seen sensors
+- Profiles maintain compatibility with ioBroker format
+- Ready for immediate use in Home Assistant
+
+### Benefits
+- Support for virtually all common EnOcean devices
+- Temperature sensors, switches, actuators, and more
+- No manual profile creation needed
+- Comprehensive device ecosystem support
+
 ## [1.0.11] - 2025-12-12
 
 ### Added

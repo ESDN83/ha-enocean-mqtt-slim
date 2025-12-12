@@ -1,0 +1,102 @@
+{
+  "eep": "A5-05-01",
+  "rorg_number": "0xA5",
+  "telegram": "4BS",
+  "func_number": "0x05",
+  "type_number": "0x01",
+  "type_title": "Barometric Sensor Range 500 to 1150 hPa",
+  "bidirectional": false,
+  "objects": {
+    "BAR": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Barometer",
+          "de": "Barometer"
+        },
+        "role": "value.pressure",
+        "type": "number",
+        "read": true,
+        "write": false,
+        "def": 0,
+        "unit": "hPa"
+      },
+      "native": {}
+    },
+    "TTP": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Telegram Type",
+          "de": "Telegramm Typ"
+        },
+        "role": "indicator",
+        "type": "number",
+        "read": true,
+        "write": false,
+        "states": {
+          "0": "Heartbeat",
+          "1": "Event triggered"
+        },
+        "def": 0
+      },
+      "native": {}
+    },
+    "rssi": {
+      "name": "RSSI",
+      "component": "sensor",
+      "device_class": "signal_strength",
+      "unit": "dBm",
+      "icon": "mdi:wifi",
+      "description": "Signal strength"
+    },
+    "last_seen": {
+      "name": "Last Seen",
+      "component": "sensor",
+      "device_class": "timestamp",
+      "icon": "mdi:clock-outline",
+      "description": "Last telegram received"
+    }
+  },
+  "case": [
+    {
+      "send": false,
+      "datafield": [
+        {
+          "data": "Barometer",
+          "shortcut": "BAR",
+          "bitoffs": "6",
+          "bitsize": "10",
+          "value": {
+            "+": [
+              {
+                "*": [
+                  {
+                    "-": [
+                      {
+                        "var": "value"
+                      },
+                      0
+                    ]
+                  },
+                  0.63539
+                ]
+              },
+              500
+            ]
+          },
+          "decimals": 2
+        },
+        {
+          "data": "Telegram Type",
+          "shortcut": "TTP",
+          "bitoffs": "31",
+          "bitsize": "1",
+          "value": {
+            "var": "value"
+          }
+        }
+      ]
+    }
+  ]
+}

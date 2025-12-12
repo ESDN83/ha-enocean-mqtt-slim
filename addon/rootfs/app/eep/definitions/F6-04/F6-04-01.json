@@ -1,0 +1,109 @@
+{
+  "eep": "F6-04-01",
+  "rorg_number": "0xF6",
+  "telegram": "RPS",
+  "func_number": "0x04",
+  "type_number": "0x01",
+  "type_title": "Key Card switch",
+  "bidirectional": false,
+  "objects": {
+    "KC": {
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Key Card",
+          "de": "Key Card"
+        },
+        "role": "switch",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false
+      },
+      "native": {}
+    },
+    "rssi": {
+      "name": "RSSI",
+      "component": "sensor",
+      "device_class": "signal_strength",
+      "unit": "dBm",
+      "icon": "mdi:wifi",
+      "description": "Signal strength"
+    },
+    "last_seen": {
+      "name": "Last Seen",
+      "component": "sensor",
+      "device_class": "timestamp",
+      "icon": "mdi:clock-outline",
+      "description": "Last telegram received"
+    }
+  },
+  "case": [
+    {
+      "send": false,
+      "condition": {
+        "statusfield": [
+          {
+            "bitoffs": "2",
+            "bitsize": "1",
+            "value": "1"
+          },
+          {
+            "bitoffs": "3",
+            "bitsize": "1",
+            "value": "1"
+          }
+        ]
+      },
+      "datafield": [
+        {
+          "data": "Key Card",
+          "shortcut": "KC",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": {
+            "==": [
+              {
+                "var": "value"
+              },
+              112
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "send": false,
+      "condition": {
+        "statusfield": [
+          {
+            "bitoffs": "2",
+            "bitsize": "1",
+            "value": "1"
+          },
+          {
+            "bitoffs": "3",
+            "bitsize": "1",
+            "value": "0"
+          }
+        ]
+      },
+      "datafield": [
+        {
+          "data": "Key Card",
+          "shortcut": "KC",
+          "bitoffs": "0",
+          "bitsize": "8",
+          "value": {
+            "==": [
+              {
+                "var": "value"
+              },
+              0
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
