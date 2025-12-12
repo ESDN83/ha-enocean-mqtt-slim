@@ -1,6 +1,6 @@
 ---
 name: "EnOcean MQTT Slim"
-version: "1.0.3"
+version: "1.0.4"
 slug: "enocean-mqtt-slim"
 description: "Lightweight EnOcean to MQTT bridge with web UI. Zero config files - manage all devices through the web interface. Supports 150+ EEP profiles including Kessel Staufix Control."
 url: "https://github.com/ESDN83/ha-enocean-mqtt-slim"

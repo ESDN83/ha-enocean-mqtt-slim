@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.0.4] - 2025-12-12
+
+### Fixed
+- **JSON Parsing Errors** - Fixed "unexpected non-whitespace character" error
+- Removed JSONResponse wrapper causing double JSON encoding
+- All API endpoints now return plain dicts for proper JSON serialization
+- Added comprehensive error handling to all endpoints
+- Added logging for debugging API issues
+
+### Improved
+- Better error messages when service not initialized
+- Graceful fallbacks for all API endpoints
+- EEP profiles now load correctly in dropdown
+- Gateway info displays properly
+- Device list loads without errors
+
 ## [1.0.3] - 2025-12-12
 
 ### Added
