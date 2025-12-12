@@ -240,14 +240,29 @@ class SerialHandler:
         """
         self.running = True
         logger.info("Started reading from serial port")
+        logger.info("=" * 80)
+        logger.info("🎧 LISTENING FOR ENOCEAN TELEGRAMS")
+        logger.info("   Waiting for device transmissions...")
+        logger.info("   Trigger your EnOcean devices now to see telegrams here")
+        logger.info("=" * 80)
         
+        packet_count = 0
         while self.running:
             try:
                 packet = await self.read_packet()
                 if packet:
+                    packet_count += 1
+                    logger.info(f"📦 RAW PACKET #{packet_count} RECEIVED")
+                    logger.info(f"   Type: {hex(packet.packet_type)}")
+                    logger.info(f"   Data length: {len(packet.data)}")
+                    logger.info(f"   Raw data: {packet.data.hex()}")
+                    
                     # Only process radio telegrams, not responses
                     if packet.packet_type == ESP3Packet.PACKET_TYPE_RADIO_ERP1:
+                        logger.info(f"   ✅ This is a RADIO TELEGRAM - processing...")
                         await callback(packet)
+                    else:
+                        logger.info(f"   ⏭️  Not a radio telegram - skipping")
             except Exception as e:
                 logger.error(f"Error in read loop: {e}")
                 await asyncio.sleep(1)
