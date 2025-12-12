@@ -1,175 +1,340 @@
-# EnOcean MQTT Slim - Home Assistant Addon
+# EnOcean MQTT Slim
 
-A lightweight, user-friendly EnOcean to MQTT bridge for Home Assistant with a built-in web UI for device management.
+[![GitHub Release](https://img.shields.io/github/v/release/ESDN83/ha-enocean-mqtt-slim)](https://github.com/ESDN83/ha-enocean-mqtt-slim/releases)
+[![License](https://img.shields.io/github/license/ESDN83/ha-enocean-mqtt-slim)](LICENSE)
 
-## Features
+A lightweight, modern EnOcean to MQTT bridge for Home Assistant with automatic device detection and a beautiful web UI.
 
-✅ **Zero Configuration Files** - Everything managed through web UI  
-✅ **150+ Built-in EEP Profiles** - Including Kessel Staufix Control (MV-01-01)  
-✅ **Auto-Discovery** - Teach-in mode with automatic device detection  
-✅ **Web-Based Management** - Add, edit, and monitor devices via browser  
-✅ **MQTT Auto-Discovery** - Entities appear automatically in Home Assistant  
-✅ **Better USB Communication** - Direct Python serial implementation  
-✅ **MIT Licensed** - Free for commercial and personal use  
+## ✨ Features
 
-## Installation
+### 🎯 Zero Configuration
+- **Automatic Device Detection** - Just press the teach-in button on your device!
+- **Auto-EEP Detection** - Automatically detects EEP profile from teach-in telegrams
+- **MQTT Discovery** - Devices appear in Home Assistant automatically
+- **UTE Teach-In Response** - Proper teach-in completion for immediate device operation
 
-### Step 1: Add Repository
+### 🎨 Modern Web UI
+- **Device Management** - Add, edit, enable/disable, and delete devices
+- **Live Status** - Real-time gateway and MQTT connection status
+- **EEP Profile Browser** - Search and view all 152 supported profiles
+- **Profile Details** - View entities, datafields, and raw JSON for each profile
 
-1. Open Home Assistant
-2. Go to **Settings** → **Add-ons** → **Add-on Store**
-3. Click the three dots menu (⋮) in the top right
-4. Select **Repositories**
-5. Add this URL: `https://github.com/ESDN83/ha-enocean-mqtt-slim`
-6. Click **Add**
+### 🔧 Advanced Features
+- **Custom EEP Profiles** - Override or add custom profiles via `/config/enocean_custom_profiles/`
+- **Profile Overrides** - Tweak existing profiles without modifying built-in definitions
+- **Device Editing** - Change EEP profile, name, manufacturer after adding
+- **RSSI Monitoring** - Track signal strength for each device
+- **Last Seen** - Monitor device activity and connectivity
 
-### Step 2: Install Addon
+### 📡 Supported Devices
+- **152 EEP Profiles** including:
+  - Temperature & Humidity Sensors (A5-02, A5-04)
+  - Door/Window Contacts (D5-00)
+  - Motion Sensors (A5-07, A5-08)
+  - Light Switches (F6-02, F6-03)
+  - Actuators (A5-38)
+  - Custom Devices (MV-01 for Kessel Staufix Control, etc.)
 
-1. Find "EnOcean MQTT Slim" in the Add-on Store
-2. Click **Install**
-3. Wait for installation to complete
+## 🚀 Quick Start
 
-### Step 3: Configure
+### Installation
 
-1. Go to the **Configuration** tab
-2. Select your serial port (e.g., `/dev/ttyUSB0`)
-3. Click **Save**
-4. Start the addon
+1. **Add Repository** to Home Assistant:
+   ```
+   https://github.com/ESDN83/ha-enocean-mqtt-slim
+   ```
 
-### Step 4: Add Devices
+2. **Install** the addon from the Add-on Store
 
-1. Click **Open Web UI** in the addon page
-2. Click **Add Device**
-3. Choose **Teach-In Mode** or **Manual Entry**
-4. For teach-in: Click "Start Teach-In" and trigger your device
-5. Device appears automatically in Home Assistant!
+3. **Configure** your serial port:
+   - Go to Settings → Add-ons → EnOcean MQTT Slim
+   - Select your EnOcean USB gateway (e.g., `/dev/ttyUSB0`)
+   - Start the addon
 
-## Supported Devices
+4. **Open Web UI** and start adding devices!
 
-This addon includes 150+ EEP profiles for various EnOcean devices:
+### Adding Devices
 
-- **Kessel Staufix Control** (MV-01-01) - Backwater alarm
-- **Temperature Sensors** (A5-02-xx)
-- **Rocker Switches** (F6-02-xx)
-- **Occupancy Sensors** (A5-07-xx)
-- **Window Contacts** (D5-00-01)
-- **LED Controllers** (D2-01-xx)
-- And many more...
+#### Method 1: Automatic (Recommended)
+1. Open the Web UI
+2. Put your EnOcean device in teach-in mode (press learn button)
+3. Device is automatically detected and added!
+4. Check Home Assistant for new entities
 
-## Web UI Features
+#### Method 2: Manual
+1. Open the Web UI
+2. Click "Add Device"
+3. Enter Device ID (8-character hex, e.g., `05834fa4`)
+4. Enter Device Name
+5. Select EEP Profile
+6. Click "Save Device"
 
-### Dashboard
-- View all devices at a glance
-- See online/offline status
-- Monitor signal strength (RSSI)
-- Quick access to device actions
+## 📖 Documentation
 
-### Device Management
-- **Teach-In Mode** - Automatic device detection
-- **Manual Entry** - Add devices by ID
-- **Edit Devices** - Change names, EEP profiles
-- **Delete Devices** - Remove unwanted devices
+### Custom EEP Profiles
 
-### EEP Browser
-- Browse 150+ built-in profiles
-- Search by name or EEP code
-- View profile details
+You can override built-in profiles or add completely new ones:
 
-### Settings
-- Gateway information
-- Serial port configuration
-- MQTT status
-- System diagnostics
+1. **Create directory** (if it doesn't exist):
+   ```
+   /config/enocean_custom_profiles/
+   ```
 
-## Example: Kessel Staufix Control
+2. **Add JSON file** with your custom profile:
+   ```json
+   {
+     "eep": "MV-01-01",
+     "rorg_number": "0xA5",
+     "func_number": "0x01",
+     "type_number": "0x01",
+     "type_title": "My Custom Device",
+     "manufacturer": "Custom",
+     "description": "Custom device profile",
+     "objects": {
+       "AL": {
+         "name": "Alarm",
+         "component": "binary_sensor",
+         "device_class": "problem",
+         "icon": "mdi:alert"
+       }
+     },
+     "case": [
+       {
+         "datafield": [
+           {
+             "shortcut": "AL",
+             "data": "db0",
+             "bitoffs": "0",
+             "bitsize": "1",
+             "value": {
+               "0": "Normal",
+               "1": "Alarm"
+             }
+           }
+         ]
+       }
+     ]
+   }
+   ```
 
-The Kessel Staufix Control backwater alarm is fully supported:
+3. **Restart addon** - Custom profile will override built-in version
 
-1. **Add Device** via teach-in or manual entry
-2. **Device ID**: Your device's EnOcean ID (e.g., `05834fa4`)
-3. **EEP Profile**: MV-01-01 (Kessel Staufix Control)
-4. **Entity Created**: `binary_sensor.staufix_control_alarm`
-5. **Device Class**: `problem` (shows as alert in HA)
+### Example: Kessel Staufix Control
 
-The alarm entity will automatically update when water is detected!
+The Kessel Staufix Control uses a custom MV-01-01 profile. To customize it:
 
-## Architecture
+1. Copy the built-in profile:
+   ```bash
+   cp /addon_configs/.../eep/definitions/MV-01/MV-01-01.json /config/enocean_custom_profiles/MV-01-01.json
+   ```
 
-```
-EnOcean Device → USB Stick → Serial → ESP3 Parser → 
-EEP Matcher → Data Extractor → MQTT → HA Discovery → HA Entities
-```
+2. Edit the file to adjust datafield parsing
 
-## Technology Stack
+3. Restart the addon
 
-- **Python 3.11+** - Core application
-- **FastAPI** - Web UI backend
-- **SQLite** - Device database
-- **pyserial** - Serial communication
-- **paho-mqtt** - MQTT client
-- **Bootstrap 5** - Responsive UI
+### Configuration
 
-## Configuration Options
+The addon uses environment variables from Home Assistant:
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `serial_port` | USB stick device path | Auto-detect |
-| `log_level` | Logging verbosity | `info` |
+- `SERIAL_PORT` - EnOcean USB gateway device
+- `MQTT_HOST` - MQTT broker (auto-configured by HA)
+- `MQTT_PORT` - MQTT port (default: 1883)
+- `MQTT_USER` - MQTT username (auto-configured)
+- `MQTT_PASSWORD` - MQTT password (auto-configured)
+- `LOG_LEVEL` - Logging level (debug, info, warning, error)
 
-That's it! No complex YAML files needed.
+## 🎓 How Teach-In Works
 
-## Troubleshooting
+### UTE (Universal Teach-In) Process
+
+1. **Device sends teach-in telegram**
+   - Contains EEP profile information
+   - Contains real device ID in data payload
+   - LRN bit = 0 (teach-in mode)
+
+2. **Addon detects and parses**
+   - Extracts FUNC and TYPE from telegram
+   - Constructs EEP code (e.g., A5-30-03)
+   - Extracts real device ID from data bytes 5-8
+   - Looks up profile in database
+
+3. **Addon adds device**
+   - Creates device with detected EEP
+   - Publishes MQTT discovery
+   - Sends teach-in response back to device
+
+4. **Device receives response**
+   - Confirms successful learning
+   - Exits teach-in mode
+   - Starts sending normal data telegrams
+
+5. **Data flows to Home Assistant**
+   - Device sends data telegrams
+   - Addon parses using EEP profile
+   - Publishes to MQTT
+   - Entities update in Home Assistant
+
+## 🔍 Troubleshooting
 
 ### Device Not Detected
 
-1. Check serial port is correct
-2. Ensure USB stick is connected
-3. Try teach-in mode again
-4. Check addon logs
+**Check logs** for teach-in telegrams:
+```
+🎓 TEACH-IN TELEGRAM DETECTED!
+   Device ID: c0206880
+   📱 Real Device ID (from data): 05834fa4
+   📋 Detected EEP: A5-30-03
+```
 
-### Entities Not Appearing in HA
+If you see this, the device was detected. If not:
+- Ensure device is in teach-in mode
+- Check serial port connection
+- Verify gateway is working
 
-1. Verify MQTT broker is running
-2. Check MQTT integration is configured
-3. Restart Home Assistant
-4. Check web UI shows device as online
+### Device Added But No Data
 
-### USB Stick Not Found
+**Check if teach-in response was sent**:
+```
+📤 Sending teach-in response to device...
+✅ Teach-in response sent! Device should exit learn mode.
+```
 
-1. Go to **Settings** → **System** → **Hardware**
-2. Find your EnOcean USB stick path
-3. Update serial port in addon configuration
+If not sent:
+- Device may need manual teach-in completion
+- Try pressing learn button again
+- Check if device supports UTE
 
-## Development
+### Wrong EEP Profile
 
-This addon is built from scratch with:
-- Clean, maintainable Python code
-- Comprehensive EEP library
-- User-friendly web interface
-- No licensing restrictions (MIT)
+**Edit device** in Web UI:
+1. Click pencil icon next to device
+2. Change EEP Profile dropdown
+3. Click "Save Device"
+4. Device will use new profile immediately
 
-## Credits
+### Custom Profile Not Loading
 
-- EEP profile structure inspired by [ioBroker.enocean](https://github.com/Jey-Cee/ioBroker.enocean)
-- Built for the Home Assistant community
-- Developed by ESDN83
+**Check logs** for:
+```
+🔄 Overriding EEP profile: MV-01-01 with custom version
+```
 
-## License
+If not shown:
+- Verify file is in `/config/enocean_custom_profiles/`
+- Check JSON syntax is valid
+- Restart addon
 
-MIT License - See [LICENSE](LICENSE) file for details.
+## 📊 Web UI Features
 
-## Support
+### Dashboard
+- Gateway status and information
+- MQTT connection status
+- Device count
+- EEP profile browser
+- Auto-detect mode
 
-For issues and feature requests:
-- GitHub Issues: https://github.com/ESDN83/ha-enocean-mqtt-slim/issues
-- Home Assistant Community: [Link to forum thread]
+### Device Management
+- List all devices with status
+- Edit device properties
+- Enable/disable devices
+- Delete devices
+- View last seen and RSSI
 
-## Changelog
+### EEP Profiles
+- Browse 152 built-in profiles
+- Search by EEP code, name, or description
+- View profile details
+- See entities and datafields
+- View raw JSON
 
-### Version 1.0.0 (Initial Release)
-- Web UI for device management
-- 150+ built-in EEP profiles
-- Auto-discovery via teach-in
-- MQTT auto-discovery for HA
-- SQLite device database
-- Kessel Staufix Control support (MV-01-01)
+## 🛠️ Development
+
+### Project Structure
+```
+addon/
+├── config.yaml              # Addon configuration
+├── icon.png                 # Addon icon
+├── rootfs/
+│   └── app/
+│       ├── main.py          # Main application
+│       ├── core/            # Core functionality
+│       │   ├── serial_handler.py
+│       │   ├── esp3_protocol.py
+│       │   ├── mqtt_handler.py
+│       │   └── device_manager.py
+│       ├── eep/             # EEP handling
+│       │   ├── loader.py
+│       │   ├── parser.py
+│       │   └── definitions/ # 152 EEP profiles
+│       └── web_ui/          # Web interface
+│           ├── app.py
+│           └── templates/
+```
+
+### Building
+
+```bash
+# Build for all architectures
+docker buildx build --platform linux/amd64,linux/arm64,linux/armv7 -t enocean-mqtt-slim .
+
+# Build for local testing
+docker build -t enocean-mqtt-slim .
+```
+
+## 📝 Changelog
+
+### v1.0.20 (Latest)
+- ✅ Added UTE teach-in response for proper device learning
+- ✅ Device exits teach-in mode automatically
+- ✅ Normal data telegrams start immediately
+- ✅ Updated Web UI version display
+- ✅ Added EnOcean icon
+- ✅ Added custom EEP profile override support
+
+### v1.0.19
+- ✅ Extract real device ID from teach-in data payload
+- ✅ Fixed device matching for normal telegrams
+- ✅ Proper device ID handling
+
+### v1.0.18
+- ✅ Automatic device detection from teach-in telegrams
+- ✅ Auto-detect EEP profile (FUNC + TYPE extraction)
+- ✅ Auto-add devices with correct profile
+- ✅ MQTT discovery published automatically
+
+### v1.0.14
+- ✅ Initial release
+- ✅ Web UI for device management
+- ✅ 152 EEP profiles
+- ✅ MQTT integration
+- ✅ Home Assistant discovery
+
+## 🤝 Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Based on the original [enoceanmqtt](https://github.com/romor/enoceanmqtt) project
+- EnOcean Alliance for EEP specifications
+- Home Assistant community
+
+## 📧 Support
+
+- **Issues**: [GitHub Issues](https://github.com/ESDN83/ha-enocean-mqtt-slim/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/ESDN83/ha-enocean-mqtt-slim/discussions)
+- **Documentation**: [Wiki](https://github.com/ESDN83/ha-enocean-mqtt-slim/wiki)
+
+---
+
+Made with ❤️ for the Home Assistant community

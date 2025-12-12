@@ -61,23 +61,26 @@ class EEPProfile:
 class EEPLoader:
     """Load and manage EEP profiles"""
     
-    def __init__(self, definitions_path: str):
+    def __init__(self, definitions_path: str, custom_path: str = '/config/enocean_custom_profiles'):
         """
         Initialize EEP loader
         
         Args:
-            definitions_path: Path to EEP definitions directory
+            definitions_path: Path to built-in EEP definitions directory
+            custom_path: Path to custom/override EEP profiles directory
         """
         self.definitions_path = Path(definitions_path)
+        self.custom_path = Path(custom_path)
         self.profiles: Dict[str, EEPProfile] = {}
         self.load_all_profiles()
     
     def load_all_profiles(self):
-        """Load all EEP profiles from JSON files"""
+        """Load all EEP profiles from JSON files (built-in + custom overrides)"""
         if not self.definitions_path.exists():
             logger.error(f"EEP definitions path does not exist: {self.definitions_path}")
             return
         
+        # Load built-in profiles first
         count = 0
         for json_file in self.definitions_path.rglob('*.json'):
             try:
@@ -90,7 +93,34 @@ class EEPLoader:
             except Exception as e:
                 logger.error(f"Failed to load EEP profile from {json_file}: {e}")
         
-        logger.info(f"Loaded {count} EEP profiles")
+        logger.info(f"Loaded {count} built-in EEP profiles")
+        
+        # Load custom/override profiles
+        if self.custom_path.exists():
+            custom_count = 0
+            override_count = 0
+            for json_file in self.custom_path.rglob('*.json'):
+                try:
+                    with open(json_file, 'r') as f:
+                        data = json.load(f)
+                        profile = EEPProfile(data)
+                        
+                        if profile.eep in self.profiles:
+                            logger.info(f"🔄 Overriding EEP profile: {profile.eep} with custom version")
+                            override_count += 1
+                        else:
+                            logger.info(f"➕ Adding custom EEP profile: {profile.eep}")
+                        
+                        self.profiles[profile.eep] = profile
+                        custom_count += 1
+                except Exception as e:
+                    logger.error(f"Failed to load custom EEP profile from {json_file}: {e}")
+            
+            if custom_count > 0:
+                logger.info(f"Loaded {custom_count} custom profiles ({override_count} overrides, {custom_count - override_count} new)")
+        else:
+            logger.info(f"Custom profiles directory not found: {self.custom_path}")
+            logger.info(f"To add custom EEP profiles, create JSON files in: {self.custom_path}")
     
     def get_profile(self, eep: str) -> Optional[EEPProfile]:
         """
