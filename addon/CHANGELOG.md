@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.0.7] - 2025-12-12
+
+### Added
+- **Enhanced Logging** - Added detailed logging to all API endpoints for debugging
+- Logs now show when each API endpoint is called
+- Logs show service component availability (eep_loader, device_manager, mqtt_handler)
+- Logs show actual data being returned from endpoints
+
+### Fixed
+- **Documentation** - Fixed misleading "150+ EEP profiles" claim
+- Updated description to accurately reflect current MV-01-01 profile support
+- Description now says "with more profiles coming soon"
+
+### Debugging
+- /api/status now logs service state and component availability
+- /api/eep-profiles logs loader state and profile count
+- /api/devices logs device manager state and device count
+- All logs visible in addon logs for troubleshooting
+
 ## [1.0.6] - 2025-12-12
 
 ### Fixed

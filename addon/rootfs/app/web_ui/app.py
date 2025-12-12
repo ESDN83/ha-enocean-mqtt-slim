@@ -59,8 +59,16 @@ async def health():
 @app.get("/api/status")
 async def get_status():
     """Get service status"""
+    logger.info("=== API /api/status called ===")
     try:
+        logger.info(f"service_state.service exists: {service_state.service is not None}")
+        if service_state.service:
+            logger.info(f"  eep_loader: {service_state.service.eep_loader is not None}")
+            logger.info(f"  device_manager: {service_state.service.device_manager is not None}")
+            logger.info(f"  mqtt_handler: {service_state.service.mqtt_handler is not None}")
+        
         status = service_state.get_status()
+        logger.info(f"Status returned: {status}")
         return status
     except Exception as e:
         logger.error(f"Error getting status: {e}", exc_info=True)
@@ -99,14 +107,17 @@ async def get_gateway_info():
 @app.get("/api/eep-profiles")
 async def get_eep_profiles():
     """Get list of available EEP profiles"""
+    logger.info("=== API /api/eep-profiles called ===")
     try:
         eep_loader = service_state.get_eep_loader()
+        logger.info(f"eep_loader exists: {eep_loader is not None}")
         if not eep_loader:
             logger.warning("EEP loader not available yet")
             return {"profiles": []}
         
         profiles = eep_loader.list_profiles()
-        logger.debug(f"Returning {len(profiles)} EEP profiles")
+        logger.info(f"Returning {len(profiles)} EEP profiles")
+        logger.info(f"First profile: {profiles[0] if profiles else 'None'}")
         return {"profiles": profiles}
     except Exception as e:
         logger.error(f"Error getting EEP profiles: {e}", exc_info=True)
@@ -116,14 +127,16 @@ async def get_eep_profiles():
 @app.get("/api/devices")
 async def get_devices():
     """Get list of configured devices"""
+    logger.info("=== API /api/devices called ===")
     try:
         device_manager = service_state.get_device_manager()
+        logger.info(f"device_manager exists: {device_manager is not None}")
         if not device_manager:
             logger.warning("Device manager not available yet")
             return {"devices": []}
         
         devices = device_manager.list_devices()
-        logger.debug(f"Returning {len(devices)} devices")
+        logger.info(f"Returning {len(devices)} devices")
         return {"devices": devices}
     except Exception as e:
         logger.error(f"Error getting devices: {e}", exc_info=True)
