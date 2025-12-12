@@ -1,5 +1,46 @@
 # Changelog
 
+## [1.0.3] - 2025-12-12
+
+### Added
+- **Complete Device Management UI** - Full web-based device management
+- Interactive device list table with real-time updates
+- Add device modal with form validation
+- Edit device functionality
+- Delete device with confirmation
+- Enable/Disable toggle buttons
+- EEP profile selector dropdown
+- Gateway information modal with real data
+- EEP profiles viewer modal
+- Real-time status updates (auto-refresh every 30 seconds)
+- Visual feedback for all actions
+- Responsive Bootstrap 5 design
+
+### Features
+- ✅ Add devices via web UI (no manual JSON editing!)
+- ✅ Edit device name, EEP, manufacturer
+- ✅ Enable/disable devices with one click
+- ✅ Delete devices (removes from HA automatically)
+- ✅ View gateway information (Base ID, version, chip ID)
+- ✅ Browse available EEP profiles
+- ✅ Real-time device status (last seen, RSSI)
+- ✅ Status indicators for Gateway and MQTT
+- ✅ Device count badges
+- ✅ Hover effects and smooth animations
+
+### API
+- Complete REST API for device management
+- Service state manager for real-time data
+- All endpoints return actual service data (no fake data)
+
+### UI Improvements
+- Professional table layout for devices
+- Action buttons (Edit, Enable/Disable, Delete)
+- Modal dialogs for forms
+- Success/error messages
+- Loading states
+- Empty state with call-to-action
+
 ## [1.0.2] - 2025-12-12
 
 ### Added

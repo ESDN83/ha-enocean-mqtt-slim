@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EnOcean MQTT Slim - Device Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .card-stat {
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card-stat:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .device-row {
+            transition: background-color 0.2s;
+        }
+        .device-row:hover {
+            background-color: #f8f9fa;
+        }
+        .status-badge {
+            min-width: 80px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">
+                <i class="bi bi-radio-tower"></i> EnOcean MQTT Slim
+            </span>
+            <div>
+                <span class="badge bg-light text-dark me-2">v1.0.3</span>
+                <span class="badge bg-success" id="status-badge">Running</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Status Bar -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-info d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>System Status:</strong>
+                        <span class="ms-2">Gateway: <span id="gateway-status" class="badge bg-secondary">Checking...</span></span>
+                        <span class="ms-2">MQTT: <span id="mqtt-status" class="badge bg-secondary">Checking...</span></span>
+                        <span class="ms-2">Devices: <span id="device-count-badge" class="badge bg-secondary">0</span></span>
+                    </div>
+                    <div>
+                        <a href="https://github.com/ESDN83/ha-enocean-mqtt-slim" target="_blank" class="btn btn-sm btn-outline-primary me-2">
+                            <i class="bi bi-github"></i> GitHub
+                        </a>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="refreshAll()">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card card-stat text-center" onclick="showGatewayInfo()">
+                    <div class="card-body">
+                        <i class="bi bi-hdd-network display-4 text-primary"></i>
+                        <h6 class="mt-2">Gateway</h6>
+                        <small class="text-muted">Click for details</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card card-stat text-center" onclick="showEEPProfiles()">
+                    <div class="card-body">
+                        <i class="bi bi-file-earmark-code display-4 text-info"></i>
+                        <h6 class="mt-2"><span id="eep-count">1</span> EEP Profiles</h6>
+                        <small class="text-muted">Click to view</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card card-stat text-center">
+                    <div class="card-body">
+                        <i class="bi bi-router display-4 text-success"></i>
+                        <h6 class="mt-2"><span id="device-count">0</span> Devices</h6>
+                        <small class="text-muted">Configured</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card card-stat text-center" onclick="showAddDeviceModal()">
+                    <div class="card-body">
+                        <i class="bi bi-plus-circle display-4 text-warning"></i>
+                        <h6 class="mt-2">Add Device</h6>
+                        <small class="text-muted">Click to add</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Device List -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-list-ul"></i> Device Management</h5>
+                        <button class="btn btn-primary btn-sm" onclick="showAddDeviceModal()">
+                            <i class="bi bi-plus-lg"></i> Add Device
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="device-list-container">
+                            <div class="text-center py-5">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2">Loading devices...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Device Modal -->
+    <div class="modal fade" id="deviceModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deviceModalTitle">Add Device</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="deviceForm">
+                        <div class="mb-3">
+                            <label for="deviceId" class="form-label">Device ID *</label>
+                            <input type="text" class="form-control" id="deviceId" placeholder="e.g., 05834fa4" required>
+                            <small class="text-muted">8-character hex ID from your EnOcean device</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="deviceName" class="form-label">Device Name *</label>
+                            <input type="text" class="form-control" id="deviceName" placeholder="e.g., Staufix Control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="deviceEEP" class="form-label">EEP Profile *</label>
+                            <select class="form-select" id="deviceEEP" required>
+                                <option value="">Loading profiles...</option>
+                            </select>
+                            <small class="text-muted">Select the EnOcean Equipment Profile</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="deviceManufacturer" class="form-label">Manufacturer</label>
+                            <input type="text" class="form-control" id="deviceManufacturer" placeholder="e.g., Kessel" value="EnOcean">
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="deviceEnabled" checked>
+                            <label class="form-check-label" for="deviceEnabled">
+                                Enable device
+                            </label>
+                        </div>
+                    </form>
+                    <div id="deviceFormError" class="alert alert-danger mt-3" style="display: none;"></div>
+                    <div id="deviceFormSuccess" class="alert alert-success mt-3" style="display: none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveDevice()">
+                        <i class="bi bi-save"></i> Save Device
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gateway Info Modal -->
+    <div class="modal fade" id="gatewayModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-hdd-network"></i> Gateway Information</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table">
+                        <tr><th>Status:</th><td><span class="badge bg-success">Connected</span></td></tr>
+                        <tr><th>Base ID:</th><td><code id="gw-base-id">Loading...</code></td></tr>
+                        <tr><th>Version:</th><td id="gw-version">Loading...</td></tr>
+                        <tr><th>Chip ID:</th><td><code id="gw-chip-id">Loading...</code></td></tr>
+                        <tr><th>Description:</th><td id="gw-desc">Loading...</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EEP Profiles Modal -->
+    <div class="modal fade" id="eepModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-file-earmark-code"></i> EEP Profiles</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="eep-list-container">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <p class="mt-2">Loading profiles...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentEditingDevice = null;
+        let deviceModal, gatewayModal, eepModal;
+
+        // Initialize modals
+        document.addEventListener('DOMContentLoaded', function() {
+            deviceModal = new bootstrap.Modal(document.getElementById('deviceModal'));
+            gatewayModal = new bootstrap.Modal(document.getElementById('gatewayModal'));
+            eepModal = new bootstrap.Modal(document.getElementById('eepModal'));
+            
+            refreshAll();
+            loadEEPProfiles();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(refreshAll, 30000);
+        });
+
+        async function refreshAll() {
+            await Promise.all([
+                refreshStatus(),
+                refreshDevices()
+            ]);
+        }
+
+        async function refreshStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                document.getElementById('status-badge').textContent = data.status === 'running' ? 'Running' : 'Stopped';
+                document.getElementById('eep-count').textContent = data.eep_profiles || 0;
+                document.getElementById('device-count').textContent = data.devices || 0;
+                document.getElementById('device-count-badge').textContent = data.devices || 0;
+                
+                const gwStatus = document.getElementById('gateway-status');
+                gwStatus.textContent = data.gateway_connected ? 'Connected' : 'Disconnected';
+                gwStatus.className = 'badge ' + (data.gateway_connected ? 'bg-success' : 'bg-danger');
+                
+                const mqttStatus = document.getElementById('mqtt-status');
+                mqttStatus.textContent = data.mqtt_connected ? 'Connected' : 'Disconnected';
+                mqttStatus.className = 'badge ' + (data.mqtt_connected ? 'bg-success' : 'bg-danger');
+            } catch (error) {
+                console.error('Error refreshing status:', error);
+            }
+        }
+
+        async function refreshDevices() {
+            try {
+                const response = await fetch('/api/devices');
+                const data = await response.json();
+                const devices = data.devices || [];
+                
+                const container = document.getElementById('device-list-container');
+                
+                if (devices.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox display-1 text-muted"></i>
+                            <p class="mt-3 text-muted">No devices configured yet</p>
+                            <button class="btn btn-primary" onclick="showAddDeviceModal()">
+                                <i class="bi bi-plus-lg"></i> Add Your First Device
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = `
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Device ID</th>
+                                    <th>Name</th>
+                                    <th>EEP Profile</th>
+                                    <th>Manufacturer</th>
+                                    <th>Last Seen</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                devices.forEach(device => {
+                    const enabled = device.enabled !== false;
+                    const lastSeen = device.last_seen ? new Date(device.last_seen).toLocaleString() : 'Never';
+                    const rssi = device.rssi ? `${device.rssi} dBm` : '-';
+                    
+                    html += `
+                        <tr class="device-row">
+                            <td>
+                                <span class="badge status-badge ${enabled ? 'bg-success' : 'bg-secondary'}">
+                                    ${enabled ? 'Enabled' : 'Disabled'}
+                                </span>
+                            </td>
+                            <td><code>${device.id}</code></td>
+                            <td><strong>${device.name}</strong></td>
+                            <td><span class="badge bg-info">${device.eep}</span></td>
+                            <td>${device.manufacturer || 'EnOcean'}</td>
+                            <td>
+                                <small>${lastSeen}</small>
+                                ${device.rssi ? `<br><small class="text-muted">${rssi}</small>` : ''}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary" onclick="editDevice('${device.id}')" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-${enabled ? 'warning' : 'success'}" 
+                                            onclick="toggleDevice('${device.id}', ${!enabled})" 
+                                            title="${enabled ? 'Disable' : 'Enable'}">
+                                        <i class="bi bi-${enabled ? 'pause' : 'play'}-fill"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="deleteDevice('${device.id}', '${device.name}')" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error refreshing devices:', error);
+                document.getElementById('device-list-container').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Error loading devices: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function loadEEPProfiles() {
+            try {
+                const response = await fetch('/api/eep-profiles');
+                const data = await response.json();
+                const profiles = data.profiles || [];
+                
+                const select = document.getElementById('deviceEEP');
+                select.innerHTML = '<option value="">Select EEP Profile...</option>';
+                
+                profiles.forEach(profile => {
+                    const option = document.createElement('option');
+                    option.value = profile.eep;
+                    option.textContent = `${profile.eep} - ${profile.title}`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading EEP profiles:', error);
+            }
+        }
+
+        function showAddDeviceModal() {
+            currentEditingDevice = null;
+            document.getElementById('deviceModalTitle').textContent = 'Add Device';
+            document.getElementById('deviceForm').reset();
+            document.getElementById('deviceId').disabled = false;
+            document.getElementById('deviceEnabled').checked = true;
+            document.getElementById('deviceFormError').style.display = 'none';
+            document.getElementById('deviceFormSuccess').style.display = 'none';
+            deviceModal.show();
+        }
+
+        async function editDevice(deviceId) {
+            try {
+                const response = await fetch(`/api/devices/${deviceId}`);
+                const device = await response.json();
+                
+                currentEditingDevice = deviceId;
+                document.getElementById('deviceModalTitle').textContent = 'Edit Device';
+                document.getElementById('deviceId').value = device.id;
+                document.getElementById('deviceId').disabled = true;
+                document.getElementById('deviceName').value = device.name;
+                document.getElementById('deviceEEP').value = device.eep;
+                document.getElementById('deviceManufacturer').value = device.manufacturer || 'EnOcean';
+                document.getElementById('deviceEnabled').checked = device.enabled !== false;
+                document.getElementById('deviceFormError').style.display = 'none';
+                document.getElementById('deviceFormSuccess').style.display = 'none';
+                
+                deviceModal.show();
+            } catch (error) {
+                alert('Error loading device: ' + error.message);
+            }
+        }
+
+        async function saveDevice() {
+            const deviceId = document.getElementById('deviceId').value.trim();
+            const deviceName = document.getElementById('deviceName').value.trim();
+            const deviceEEP = document.getElementById('deviceEEP').value;
+            const deviceManufacturer = document.getElementById('deviceManufacturer').value.trim();
+            const deviceEnabled = document.getElementById('deviceEnabled').checked;
+            
+            const errorDiv = document.getElementById('deviceFormError');
+            const successDiv = document.getElementById('deviceFormSuccess');
+            
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            
+            if (!deviceId || !deviceName || !deviceEEP) {
+                errorDiv.textContent = 'Please fill in all required fields';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            try {
+                let response;
+                if (currentEditingDevice) {
+                    // Update existing device
+                    response = await fetch(`/api/devices/${currentEditingDevice}`, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            name: deviceName,
+                            eep: deviceEEP,
+                            manufacturer: deviceManufacturer,
+                            enabled: deviceEnabled
+                        })
+                    });
+                } else {
+                    // Create new device
+                    response = await fetch('/api/devices', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            id: deviceId,
+                            name: deviceName,
+                            eep: deviceEEP,
+                            manufacturer: deviceManufacturer
+                        })
+                    });
+                }
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to save device');
+                }
+                
+                successDiv.textContent = currentEditingDevice ? 'Device updated successfully!' : 'Device added successfully!';
+                successDiv.style.display = 'block';
+                
+                setTimeout(() => {
+                    deviceModal.hide();
+                    refreshAll();
+                }, 1500);
+                
+            } catch (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        async function toggleDevice(deviceId, enable) {
+            try {
+                const endpoint = enable ? 'enable' : 'disable';
+                const response = await fetch(`/api/devices/${deviceId}/${endpoint}`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to toggle device');
+                }
+                
+                await refreshAll();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function deleteDevice(deviceId, deviceName) {
+            if (!confirm(`Are you sure you want to delete "${deviceName}"?\n\nThis will also remove it from Home Assistant.`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/devices/${deviceId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to delete device');
+                }
+                
+                await refreshAll();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function showGatewayInfo() {
+            try {
+                const response = await fetch('/api/gateway-info');
+                const data = await response.json();
+                
+                document.getElementById('gw-base-id').textContent = data.base_id || 'Not available';
+                document.getElementById('gw-version').textContent = data.version || 'Not available';
+                document.getElementById('gw-chip-id').textContent = data.chip_id || 'Not available';
+                document.getElementById('gw-desc').textContent = data.description || 'Not available';
+                
+                gatewayModal.show();
+            } catch (error) {
+                alert('Error loading gateway info: ' + error.message);
+            }
+        }
+
+        async function showEEPProfiles() {
+            try {
+                const response = await fetch('/api/eep-profiles');
+                const data = await response.json();
+                const profiles = data.profiles || [];
+                
+                let html = '<div class="list-group">';
+                profiles.forEach(profile => {
+                    html += `
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1"><span class="badge bg-info">${profile.eep}</span> ${profile.title}</h6>
+                            </div>
+                            <p class="mb-1 small text-muted">${profile.description || 'No description available'}</p>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                
+                document.getElementById('eep-list-container').innerHTML = html;
+                eepModal.show();
+            } catch (error) {
+                alert('Error loading EEP profiles: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

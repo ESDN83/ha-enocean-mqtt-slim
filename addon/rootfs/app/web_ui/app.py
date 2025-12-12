@@ -43,7 +43,7 @@ class DeviceUpdate(BaseModel):
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
     """Main dashboard"""
-    return templates.TemplateResponse("dashboard_new.html", {
+    return templates.TemplateResponse("dashboard_full.html", {
         "request": request,
         "title": "EnOcean MQTT Slim",
         "status": "Running"
