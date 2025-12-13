@@ -147,13 +147,14 @@ class MQTTHandler:
             logger.error(f"Error publishing discovery: {e}")
             return False
     
-    def publish_state(self, device_id: str, data: Dict[str, Any]) -> bool:
+    def publish_state(self, device_id: str, data: Dict[str, Any], retain: bool = True) -> bool:
         """
         Publish device state
         
         Args:
             device_id: Device ID
             data: State data dictionary
+            retain: Whether to retain the message (default: True for state persistence)
             
         Returns:
             True if successful, False otherwise
@@ -166,10 +167,11 @@ class MQTTHandler:
             topic = f"enocean/{device_id}/state"
             payload = json.dumps(data)
             
-            result = self.client.publish(topic, payload, qos=0, retain=False)
+            # Use retain flag to persist state in MQTT broker
+            result = self.client.publish(topic, payload, qos=1, retain=retain)
             
             if result.rc == mqtt.MQTT_ERR_SUCCESS:
-                logger.debug(f"Published state for {device_id}: {data}")
+                logger.debug(f"Published state for {device_id}: {data} (retain={retain})")
                 return True
             else:
                 logger.error(f"Failed to publish state for {device_id}: {result.rc}")

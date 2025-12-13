@@ -1,6 +1,6 @@
 ---
 name: "EnOcean MQTT Slim"
-version: "1.0.27"
+version: "1.0.28"
 slug: "enocean-mqtt-slim"
 description: "Lightweight EnOcean to MQTT bridge with web UI. Zero config files - manage all devices through the web interface. Supports 152 EEP profiles including temperature sensors, switches, actuators, and more!"
 url: "https://github.com/ESDN83/ha-enocean-mqtt-slim"
@@ -27,7 +27,11 @@ map:
 options:
   serial_port: ""
   log_level: "info"
+  restore_state: true
+  restore_delay: 5
 
 schema:
   serial_port: "device(subsystem=tty)?"
   log_level: "list(debug|info|warning|error)"
+  restore_state: "bool"
+  restore_delay: "int(1,60)"

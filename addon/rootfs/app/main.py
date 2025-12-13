@@ -11,6 +11,7 @@ from core.serial_handler import SerialHandler
 from core.esp3_protocol import ESP3Packet
 from core.mqtt_handler import MQTTHandler
 from core.device_manager import DeviceManager
+from core.state_persistence import StatePersistence
 from eep.loader import EEPLoader
 from eep.parser import EEPParser
 from service_state import service_state
@@ -35,6 +36,7 @@ class EnOceanMQTTService:
         self.serial_handler = None
         self.mqtt_handler = None
         self.device_manager = None
+        self.state_persistence = None
         self.eep_loader = None
         self.eep_parser = None
         self.running = False
@@ -45,6 +47,8 @@ class EnOceanMQTTService:
         self.mqtt_port = int(os.getenv('MQTT_PORT', 1883))
         self.mqtt_user = os.getenv('MQTT_USER', '')
         self.mqtt_password = os.getenv('MQTT_PASSWORD', '')
+        self.restore_state = os.getenv('RESTORE_STATE', 'true').lower() == 'true'
+        self.restore_delay = int(os.getenv('RESTORE_DELAY', 5))
     
     async def initialize(self):
         """Initialize all components"""
@@ -104,6 +108,14 @@ class EnOceanMQTTService:
         logger.info("Initializing device manager...")
         self.device_manager = DeviceManager()
         logger.info(f"✓ Loaded {len(self.device_manager.list_devices())} configured devices")
+        
+        # Initialize state persistence
+        logger.info("Initializing state persistence...")
+        self.state_persistence = StatePersistence()
+        if self.restore_state:
+            logger.info(f"✓ State restoration enabled (delay: {self.restore_delay}s)")
+        else:
+            logger.info("State restoration disabled")
         
         # Initialize MQTT
         logger.info(f"Connecting to MQTT broker: {self.mqtt_host}:{self.mqtt_port}")
@@ -374,11 +386,15 @@ class EnOceanMQTTService:
                 
                 logger.info(f"  Parsed data: {parsed_data}")
                 
-                # Publish to MQTT
+                # Save state for persistence
+                if self.state_persistence:
+                    self.state_persistence.save_state(sender_id, parsed_data)
+                
+                # Publish to MQTT (with retain flag for persistence)
                 if self.mqtt_handler and self.mqtt_handler.connected:
-                    self.mqtt_handler.publish_state(sender_id, parsed_data)
+                    self.mqtt_handler.publish_state(sender_id, parsed_data, retain=True)
                     self.mqtt_handler.publish_availability(sender_id, True)
-                    logger.info(f"  → Published to MQTT")
+                    logger.info(f"  → Published to MQTT (retained)")
                 else:
                     logger.warning("  MQTT not connected, skipping publish")
             else:
@@ -436,6 +452,38 @@ class EnOceanMQTTService:
                     })
             except Exception as e:
                 logger.error(f"Error storing gateway info: {e}")
+        
+        # Restore last known states if enabled
+        if self.restore_state and self.state_persistence and self.mqtt_handler and self.mqtt_handler.connected:
+            logger.info("=" * 60)
+            logger.info(f"⏳ Waiting {self.restore_delay}s before restoring states...")
+            logger.info("=" * 60)
+            await asyncio.sleep(self.restore_delay)
+            
+            logger.info("=" * 60)
+            logger.info("🔄 Restoring last known device states...")
+            logger.info("=" * 60)
+            
+            restored_count = 0
+            all_states = self.state_persistence.get_all_states()
+            
+            for device_id, state_data in all_states.items():
+                device = self.device_manager.get_device(device_id)
+                if device and device.get('enabled') and state_data:
+                    try:
+                        # Republish last known state
+                        self.mqtt_handler.publish_state(device_id, state_data, retain=True)
+                        self.mqtt_handler.publish_availability(device_id, True)
+                        logger.info(f"  ✓ Restored state for {device['name']} ({device_id})")
+                        restored_count += 1
+                    except Exception as e:
+                        logger.error(f"  ✗ Failed to restore state for {device_id}: {e}")
+            
+            if restored_count > 0:
+                logger.info(f"✓ Restored {restored_count} device state(s)")
+            else:
+                logger.info("No states to restore")
+            logger.info("=" * 60)
         
         logger.info("=" * 60)
         logger.info("Service is running!")
