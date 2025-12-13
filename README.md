@@ -33,7 +33,7 @@ A lightweight, modern EnOcean to MQTT bridge for Home Assistant with automatic d
   - Motion Sensors (A5-07, A5-08)
   - Light Switches (F6-02, F6-03)
   - Actuators (A5-38)
-  - Custom Devices (MV-01 for Kessel Staufix Control, etc.)
+  - **Custom Devices** (MV-01 for Kessel Staufix Control, etc.)
 
 ## 🚀 Quick Start
 
@@ -71,31 +71,181 @@ A lightweight, modern EnOcean to MQTT bridge for Home Assistant with automatic d
 
 ## 📖 Documentation
 
-### Custom EEP Profiles
+### Table of Contents
+- [Custom EEP Profiles](#custom-eep-profiles)
+- [Kessel Staufix Control Setup](#kessel-staufix-control-setup)
+- [Creating Custom EEP Profiles](#creating-custom-eep-profiles)
+- [Configuration](#configuration)
+- [How Teach-In Works](#how-teach-in-works)
+- [Troubleshooting](#troubleshooting)
 
-You can override built-in profiles or add completely new ones:
+---
+
+## Custom EEP Profiles
+
+You can override built-in profiles or add completely new ones by placing JSON files in `/config/enocean_custom_profiles/`.
+
+### Quick Start
 
 1. **Create directory** (if it doesn't exist):
-   ```
-   /config/enocean_custom_profiles/
+   ```bash
+   mkdir -p /config/enocean_custom_profiles/
    ```
 
-2. **Add JSON file** with your custom profile:
-   ```json
+2. **Add JSON file** with your custom profile (e.g., `MV-01-01.json`)
+
+3. **Restart addon** - Custom profile will override built-in version
+
+### Profile Structure
+
+```json
+{
+  "eep": "MV-01-01",
+  "rorg_number": "0xA5",
+  "telegram": "4BS",
+  "func_number": "0x01",
+  "type_number": "0x01",
+  "type_title": "My Custom Device",
+  "manufacturer": "Custom",
+  "description": "Custom device profile",
+  "objects": {
+    "AL": {
+      "name": "Alarm",
+      "component": "binary_sensor",
+      "device_class": "problem",
+      "icon": "mdi:alert"
+    }
+  },
+  "case": [
+    {
+      "datafield": [
+        {
+          "shortcut": "AL",
+          "bitoffs": "29",
+          "bitsize": "1",
+          "value": {
+            "==": [
+              {"var": "value"},
+              1
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## Kessel Staufix Control Setup
+
+The Kessel Staufix Control is a special device that uses a custom MV-01-01 profile. This section provides complete setup instructions.
+
+### Overview
+
+**Device:** Kessel Staufix Control  
+**EEP Profile:** MV-01-01 (Custom)  
+**Manufacturer:** Kessel  
+**Function:** Wastewater backflow prevention alarm
+
+### Features
+
+- **Alarm Status** - Binary sensor showing problem/normal state
+- **Signal Strength** - RSSI sensor for monitoring connection quality
+- **Last Seen** - Timestamp of last communication
+
+### Setup Instructions
+
+#### 1. Add Device
+
+**Option A: Manual (Recommended for Staufix)**
+1. Open Web UI
+2. Click "Add Device"
+3. Enter:
+   - **Device ID:** Your 8-character hex ID (e.g., `05834fa4`)
+   - **Name:** `Staufix` (or your preferred name)
+   - **EEP Profile:** Select `MV-01-01 - Kessel Staufix Control`
+   - **Manufacturer:** `Kessel`
+4. Click "Save Device"
+
+**Option B: Automatic**
+1. Press the Alert or OK button on your Staufix device
+2. Device should be auto-detected (may require multiple button presses)
+
+#### 2. Verify in Home Assistant
+
+After adding, you should see:
+
+**Device:** Staufix  
+**Entities:**
+- `binary_sensor.staufix_alarm` - Alarm status (ON = problem, OFF = normal)
+- `sensor.staufix_rssi` - Signal strength in dBm
+- `sensor.staufix_last_seen` - Last update timestamp
+
+#### 3. Test Functionality
+
+- **Press Alert button** → Alarm should show ON (problem)
+- **Press OK button** → Alarm should show OFF (normal)
+
+### Understanding the Data
+
+The Staufix sends non-standard EnOcean telegrams:
+
+```
+Telegram: a5 01 00 00 0d 05 83 4f a4 80
+          ↑  ↑---------↑  ↑---------↑  ↑
+        RORG  DB3-DB0     Device ID   Status
+              (data)      (real ID)
+```
+
+**Key Points:**
+- Always sends with LRN bit = 0 (looks like teach-in, but it's data!)
+- Real device ID is in data bytes 5-8
+- Alarm bit is at bit offset 29 (DB0, bit 5)
+
+### Customizing the Profile
+
+If you need to adjust the Staufix profile:
+
+1. **Create custom profile:**
+   ```bash
+   mkdir -p /config/enocean_custom_profiles/
+   ```
+
+2. **Copy and edit:**
+   ```bash
+   # Copy built-in profile as template
+   cat > /config/enocean_custom_profiles/MV-01-01.json << 'EOF'
    {
      "eep": "MV-01-01",
      "rorg_number": "0xA5",
+     "telegram": "4BS",
      "func_number": "0x01",
      "type_number": "0x01",
-     "type_title": "My Custom Device",
-     "manufacturer": "Custom",
-     "description": "Custom device profile",
+     "type_title": "Kessel Staufix Control",
+     "manufacturer": "Kessel",
+     "description": "Wastewater backflow prevention alarm",
      "objects": {
        "AL": {
          "name": "Alarm",
          "component": "binary_sensor",
          "device_class": "problem",
-         "icon": "mdi:alert"
+         "icon": "mdi:pipe-valve",
+         "description": "Staufix alarm status"
+       },
+       "rssi": {
+         "name": "RSSI",
+         "component": "sensor",
+         "device_class": "signal_strength",
+         "unit": "dBm",
+         "icon": "mdi:wifi"
+       },
+       "last_seen": {
+         "name": "Last Seen",
+         "component": "sensor",
+         "device_class": "timestamp",
+         "icon": "mdi:clock-outline"
        }
      },
      "case": [
@@ -103,36 +253,293 @@ You can override built-in profiles or add completely new ones:
          "datafield": [
            {
              "shortcut": "AL",
-             "data": "db0",
-             "bitoffs": "0",
+             "bitoffs": "29",
              "bitsize": "1",
              "value": {
-               "0": "Normal",
-               "1": "Alarm"
+               "==": [
+                 {"var": "value"},
+                 1
+               ]
              }
            }
          ]
        }
      ]
    }
+   EOF
    ```
 
-3. **Restart addon** - Custom profile will override built-in version
+3. **Restart addon** to load custom profile
 
-### Example: Kessel Staufix Control
+### Troubleshooting Staufix
 
-The Kessel Staufix Control uses a custom MV-01-01 profile. To customize it:
+**Problem: Device not detected**
+- Press Alert or OK button multiple times
+- Check addon logs for "TELEGRAM RECEIVED"
+- Verify device ID in logs matches your device
 
-1. Copy the built-in profile:
-   ```bash
-   cp /addon_configs/.../eep/definitions/MV-01/MV-01-01.json /config/enocean_custom_profiles/MV-01-01.json
+**Problem: Alarm sensor not showing**
+- Delete device in Web UI
+- Delete MQTT discovery topics in MQTT Explorer
+- Restart addon
+- Re-add device
+
+**Problem: Alarm always shows same state**
+- Press both Alert and OK buttons to test
+- Check MQTT Explorer for state changes
+- Verify `{"AL": 0}` or `{"AL": 1}` in state topic
+
+---
+
+## Creating Custom EEP Profiles
+
+This guide explains how to create custom EEP profiles for devices not in the standard database.
+
+### Step 1: Understand Your Device
+
+You need to know:
+1. **Device ID** - 8-character hex (e.g., `05834fa4`)
+2. **RORG** - Radio telegram type (e.g., `0xA5` for 4BS)
+3. **Data structure** - Which bits represent which values
+4. **Entity types** - What sensors/binary sensors to create
+
+### Step 2: Capture Raw Telegrams
+
+1. Enable debug logging in addon
+2. Trigger your device (press button, etc.)
+3. Check logs for telegram data:
+   ```
+   📡 TELEGRAM RECEIVED
+   Data: a5 01 00 00 0d 05 83 4f a4 80
    ```
 
-2. Edit the file to adjust datafield parsing
+### Step 3: Analyze Data Structure
 
-3. Restart the addon
+For 4BS (RORG 0xA5) telegrams:
+```
+Byte 0: RORG (0xA5)
+Byte 1: DB3 (data byte 3)
+Byte 2: DB2 (data byte 2)
+Byte 3: DB1 (data byte 1)
+Byte 4: DB0 (data byte 0)
+Byte 5-8: Sender ID or additional data
+Byte 9: Status
+```
 
-### Configuration
+**Bit numbering:**
+- Bit 0 = MSB of DB3
+- Bit 31 = LSB of DB0
+
+### Step 4: Create Profile JSON
+
+```json
+{
+  "eep": "XX-YY-ZZ",
+  "rorg_number": "0xA5",
+  "telegram": "4BS",
+  "func_number": "0xYY",
+  "type_number": "0xZZ",
+  "type_title": "Your Device Name",
+  "manufacturer": "Manufacturer Name",
+  "description": "Device description",
+  "objects": {
+    "SHORTCUT1": {
+      "name": "Entity Name",
+      "component": "sensor",
+      "device_class": "temperature",
+      "unit": "°C",
+      "icon": "mdi:thermometer"
+    },
+    "SHORTCUT2": {
+      "name": "Switch State",
+      "component": "binary_sensor",
+      "device_class": "opening",
+      "icon": "mdi:door"
+    }
+  },
+  "case": [
+    {
+      "datafield": [
+        {
+          "shortcut": "SHORTCUT1",
+          "bitoffs": "8",
+          "bitsize": "8",
+          "value": {
+            "*": [
+              {"var": "value"},
+              0.1
+            ]
+          }
+        },
+        {
+          "shortcut": "SHORTCUT2",
+          "bitoffs": "31",
+          "bitsize": "1"
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Step 5: Define Datafields
+
+Each datafield extracts a value from the telegram:
+
+```json
+{
+  "shortcut": "TEMP",        // Must match key in "objects"
+  "bitoffs": "8",            // Bit offset (0-31 for 4BS)
+  "bitsize": "8",            // Number of bits to extract
+  "value": {                 // Optional: transform value
+    "*": [                   // Multiply
+      {"var": "value"},      // Raw extracted value
+      0.1                    // Factor
+    ]
+  }
+}
+```
+
+**Common transformations:**
+
+**Multiply:**
+```json
+"value": {
+  "*": [{"var": "value"}, 0.1]
+}
+```
+
+**Add offset:**
+```json
+"value": {
+  "+": [{"var": "value"}, -40]
+}
+```
+
+**Scale and offset:**
+```json
+"value": {
+  "+": [
+    {"*": [{"var": "value"}, 0.1]},
+    -40
+  ]
+}
+```
+
+**Boolean (equals):**
+```json
+"value": {
+  "==": [{"var": "value"}, 1]
+}
+```
+
+### Step 6: Component Types
+
+**Sensor (numeric values):**
+```json
+{
+  "component": "sensor",
+  "device_class": "temperature",  // temperature, humidity, pressure, etc.
+  "unit": "°C"
+}
+```
+
+**Binary Sensor (on/off):**
+```json
+{
+  "component": "binary_sensor",
+  "device_class": "opening",  // opening, motion, problem, etc.
+  "icon": "mdi:door"
+}
+```
+
+### Step 7: Test Your Profile
+
+1. Save profile to `/config/enocean_custom_profiles/XX-YY-ZZ.json`
+2. Restart addon
+3. Check logs for: `🔄 Overriding EEP profile: XX-YY-ZZ`
+4. Add device with your custom profile
+5. Trigger device and check if entities update
+
+### Example: Temperature Sensor
+
+```json
+{
+  "eep": "A5-02-05",
+  "rorg_number": "0xA5",
+  "telegram": "4BS",
+  "func_number": "0x02",
+  "type_number": "0x05",
+  "type_title": "Temperature Sensor 0°C to +40°C",
+  "manufacturer": "Generic",
+  "description": "Temperature sensor with 0-40°C range",
+  "objects": {
+    "TMP": {
+      "name": "Temperature",
+      "component": "sensor",
+      "device_class": "temperature",
+      "unit": "°C",
+      "icon": "mdi:thermometer"
+    }
+  },
+  "case": [
+    {
+      "datafield": [
+        {
+          "shortcut": "TMP",
+          "bitoffs": "16",
+          "bitsize": "8",
+          "value": {
+            "*": [
+              {"var": "value"},
+              0.15686
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Example: Door/Window Contact
+
+```json
+{
+  "eep": "D5-00-01",
+  "rorg_number": "0xD5",
+  "telegram": "1BS",
+  "func_number": "0x00",
+  "type_number": "0x01",
+  "type_title": "Door/Window Contact",
+  "manufacturer": "Generic",
+  "description": "Single contact",
+  "objects": {
+    "CO": {
+      "name": "Contact",
+      "component": "binary_sensor",
+      "device_class": "opening",
+      "icon": "mdi:door"
+    }
+  },
+  "case": [
+    {
+      "datafield": [
+        {
+          "shortcut": "CO",
+          "bitoffs": "0",
+          "bitsize": "1",
+          "invert": true
+        }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## Configuration
 
 The addon uses environment variables from Home Assistant:
 
@@ -143,7 +550,9 @@ The addon uses environment variables from Home Assistant:
 - `MQTT_PASSWORD` - MQTT password (auto-configured)
 - `LOG_LEVEL` - Logging level (debug, info, warning, error)
 
-## 🎓 How Teach-In Works
+---
+
+## How Teach-In Works
 
 ### UTE (Universal Teach-In) Process
 
@@ -174,7 +583,9 @@ The addon uses environment variables from Home Assistant:
    - Publishes to MQTT
    - Entities update in Home Assistant
 
-## 🔍 Troubleshooting
+---
+
+## Troubleshooting
 
 ### Device Not Detected
 
@@ -224,6 +635,15 @@ If not shown:
 - Check JSON syntax is valid
 - Restart addon
 
+### Entities Not Appearing in HA
+
+1. **Check MQTT Explorer** for discovery topics under `homeassistant/`
+2. **Delete old discovery** topics if they exist
+3. **Restart addon** to republish
+4. **Check HA logs** for MQTT integration errors
+
+---
+
 ## 📊 Web UI Features
 
 ### Dashboard
@@ -246,6 +666,8 @@ If not shown:
 - View profile details
 - See entities and datafields
 - View raw JSON
+
+---
 
 ## 🛠️ Development
 
@@ -281,9 +703,37 @@ docker buildx build --platform linux/amd64,linux/arm64,linux/armv7 -t enocean-mq
 docker build -t enocean-mqtt-slim .
 ```
 
+---
+
 ## 📝 Changelog
 
-### v1.0.20 (Latest)
+### v1.0.27 (Latest)
+- ✅ Added availability payload definitions to MQTT discovery
+- ✅ Prevents "unknown device" creation in Home Assistant
+- ✅ Complete Kessel Staufix Control support
+
+### v1.0.26
+- ✅ Fixed binary_sensor Jinja2 template syntax
+- ✅ Proper ON/OFF conversion for binary sensors
+
+### v1.0.25
+- ✅ Fixed timestamp format to ISO 8601 with Z suffix
+- ✅ UTC timezone support
+
+### v1.0.24
+- ✅ Fixed binary_sensor value template for ON/OFF states
+
+### v1.0.23
+- ✅ Fixed parser string to int conversion for bitoffs/bitsize
+
+### v1.0.22
+- ✅ Fixed parser to use correct data bytes (1-4) for 4BS telegrams
+
+### v1.0.21
+- ✅ Fixed device ID detection for non-standard devices
+- ✅ Bypass teach-in detection for configured devices
+
+### v1.0.20
 - ✅ Added UTE teach-in response for proper device learning
 - ✅ Device exits teach-in mode automatically
 - ✅ Normal data telegrams start immediately
@@ -309,6 +759,8 @@ docker build -t enocean-mqtt-slim .
 - ✅ MQTT integration
 - ✅ Home Assistant discovery
 
+---
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please:
@@ -319,15 +771,22 @@ Contributions are welcome! Please:
 4. Test thoroughly
 5. Submit a pull request
 
+---
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
 
 ## 🙏 Acknowledgments
 
 - Based on the original [enoceanmqtt](https://github.com/romor/enoceanmqtt) project
 - EnOcean Alliance for EEP specifications
 - Home Assistant community
+- Special thanks to all contributors and testers
+
+---
 
 ## 📧 Support
 

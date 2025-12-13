@@ -1,5 +1,114 @@
 # Changelog
 
+## [1.0.27] - 2025-12-13
+
+### Fixed
+- **CRITICAL: Availability Payload Definitions** - Added payload_available and payload_not_available to MQTT discovery
+- Prevents "unknown device" creation in Home Assistant
+- Home Assistant now properly recognizes "online"/"offline" availability states
+
+### Technical Details
+- Added `"payload_available": "online"` to discovery config
+- Added `"payload_not_available": "offline"` to discovery config
+- Without these, HA doesn't know what values to expect on availability topic
+- Fixes issue where HA creates unknown devices when seeing availability messages
+
+## [1.0.26] - 2025-12-13
+
+### Fixed
+- **CRITICAL: Binary Sensor Template Syntax** - Fixed invalid Jinja2 template causing entity creation failure
+- Changed from `{{{ 'ON' if ... }}}` (invalid triple braces) to `{% if ... %}ON{% else %}OFF{% endif %}`
+- Binary sensors now appear correctly in Home Assistant
+- Proper ON/OFF state conversion for binary sensors
+
+### Technical Details
+- Problem: Triple curly braces `{{{` are invalid Jinja2 syntax
+- Solution: Use proper if/else block syntax `{% if %}...{% else %}...{% endif %}`
+- Home Assistant can now parse the template correctly
+- Binary sensor entities are created successfully
+
+## [1.0.25] - 2025-12-13
+
+### Fixed
+- **Timestamp Format** - Changed to ISO 8601 with Z suffix for UTC
+- Changed from `datetime.now().isoformat()` to `datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')`
+- Matches Home Assistant's expected timestamp format
+- Last Seen sensor now displays correctly
+
+### Technical Details
+- Old format: `2025-12-13T00:59:18.238571` (no timezone)
+- New format: `2025-12-13T00:59:18Z` (UTC with Z suffix)
+- Proper ISO 8601 format with timezone indicator
+- Compatible with Home Assistant timestamp device class
+
+## [1.0.24] - 2025-12-13
+
+### Fixed
+- **Binary Sensor Value Template** - Added ON/OFF conversion for binary sensors
+- Binary sensors now convert 0/1 values to OFF/ON states
+- Separate value_template logic for binary_sensor vs sensor components
+
+### Technical Details
+- Binary sensors use: `{% if value_json.AL == 1 %}ON{% else %}OFF{% endif %}`
+- Regular sensors use: `{{ value_json.shortcut }}`
+- Home Assistant binary sensors require ON/OFF, not 0/1
+
+## [1.0.23] - 2025-12-13
+
+### Fixed
+- **Parser String to Int Conversion** - Fixed bitoffs and bitsize handling
+- Parser now converts string values to integers before using as array indices
+- Handles EEP profiles with string bitoffs/bitsize values (e.g., "29" instead of 29)
+
+### Technical Details
+- Problem: MV-01-01 profile has `"bitoffs": "29"` as string
+- Python slice indices must be integers
+- Added automatic conversion: `bitoffs = int(bitoffs)`
+- Prevents "slice indices must be integers" error
+
+## [1.0.22] - 2025-12-13
+
+### Fixed
+- **CRITICAL: Data Byte Extraction** - Fixed parser to use correct bytes for 4BS telegrams
+- Changed from bytes 0-3 to bytes 1-4 (DB3-DB0)
+- Alarm bit now extracted from correct position
+
+### Technical Details
+- 4BS telegram structure: `[RORG, DB3, DB2, DB1, DB0, ID, ID, ID, ID, STATUS]`
+- Was using: bytes 0-3 (RORG + DB3 + DB2 + DB1) - WRONG!
+- Now using: bytes 1-4 (DB3 + DB2 + DB1 + DB0) - CORRECT!
+- Bit offset 29 now points to correct bit in DB0
+
+## [1.0.21] - 2025-12-13
+
+### Fixed
+- **Device ID Detection** - Extract real device ID from data payload for non-standard devices
+- Kessel Staufix Control sends real ID in bytes 5-8 of data payload
+- Bypass teach-in detection for already configured devices
+
+### Technical Details
+- For 4BS telegrams, check bytes 5-8 for potential real device ID
+- If ID matches configured device, use it instead of sender ID
+- Configured devices treated as data even if LRN bit = 0
+- Fixes issue where Staufix always looked like teach-in telegram
+
+## [1.0.20] - 2025-12-12
+
+### Added
+- **UTE Teach-In Response** - Proper teach-in completion for devices
+- Device exits teach-in mode automatically after receiving response
+- Normal data telegrams start immediately
+- Updated Web UI version display
+- Added EnOcean icon
+- **Custom EEP Profile Override Support** - Load custom profiles from `/config/enocean_custom_profiles/`
+
+### Features
+- Teach-in response sent back to device after auto-detection
+- Device confirms successful learning
+- Immediate transition to normal operation
+- Custom profiles override built-in profiles
+- Place JSON files in `/config/enocean_custom_profiles/` directory
+
 ## [1.0.14] - 2025-12-12
 
 ### Fixed
