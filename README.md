@@ -19,6 +19,9 @@ A lightweight, modern EnOcean to MQTT bridge for Home Assistant with automatic d
 - **EEP Profile Browser** - Search and view all 152 supported profiles
 - **Profile Details** - View entities, datafields, and raw JSON for each profile
 
+<img width="2071" height="949" alt="grafik" src="https://github.com/user-attachments/assets/3de488a6-a8b0-4305-80e4-033d65c770ba" />
+
+
 ### 🔧 Advanced Features
 - **Custom EEP Profiles** - Override or add custom profiles via `/config/enocean_custom_profiles/`
 - **Profile Overrides** - Tweak existing profiles without modifying built-in definitions
