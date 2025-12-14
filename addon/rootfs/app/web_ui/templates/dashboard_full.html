@@ -140,8 +140,11 @@
                     <form id="deviceForm">
                         <div class="mb-3">
                             <label for="deviceId" class="form-label">Device ID *</label>
-                            <input type="text" class="form-control" id="deviceId" placeholder="e.g., 05834fa4" required>
-                            <small class="text-muted">8-character hex ID from your EnOcean device</small>
+                            <input type="text" class="form-control" id="deviceId" placeholder="e.g., 05834fa4 or 0x05834FA4" required maxlength="10">
+                            <small class="text-muted">8-character hex ID from your EnOcean device (with or without 0x prefix)</small>
+                            <div id="deviceIdHelp" class="form-text text-info" style="display: none;">
+                                <i class="bi bi-info-circle"></i> <span id="deviceIdHelpText"></span>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label for="deviceName" class="form-label">Device Name *</label>
@@ -419,7 +422,51 @@
             document.getElementById('deviceEnabled').checked = true;
             document.getElementById('deviceFormError').style.display = 'none';
             document.getElementById('deviceFormSuccess').style.display = 'none';
+            document.getElementById('deviceIdHelp').style.display = 'none';
+            
+            // Add input listener for device ID formatting
+            const deviceIdInput = document.getElementById('deviceId');
+            deviceIdInput.removeEventListener('input', formatDeviceId);
+            deviceIdInput.addEventListener('input', formatDeviceId);
+            
             deviceModal.show();
+        }
+        
+        function formatDeviceId(event) {
+            let value = event.target.value.trim().toUpperCase();
+            const helpDiv = document.getElementById('deviceIdHelp');
+            const helpText = document.getElementById('deviceIdHelpText');
+            
+            // Remove 0x prefix if present
+            if (value.startsWith('0X')) {
+                value = value.substring(2);
+                event.target.value = value;
+                helpText.textContent = 'Removed "0x" prefix automatically';
+                helpDiv.style.display = 'block';
+                helpDiv.className = 'form-text text-success';
+            }
+            
+            // Validate hex characters
+            const hexPattern = /^[0-9A-F]*$/;
+            if (value && !hexPattern.test(value)) {
+                helpText.textContent = 'Device ID must contain only hex characters (0-9, A-F)';
+                helpDiv.style.display = 'block';
+                helpDiv.className = 'form-text text-danger';
+                return;
+            }
+            
+            // Check length
+            if (value.length > 0 && value.length < 8) {
+                helpText.textContent = `Device ID must be 8 characters (currently ${value.length})`;
+                helpDiv.style.display = 'block';
+                helpDiv.className = 'form-text text-warning';
+            } else if (value.length === 8) {
+                helpText.textContent = '✓ Valid device ID format';
+                helpDiv.style.display = 'block';
+                helpDiv.className = 'form-text text-success';
+            } else if (value.length === 0) {
+                helpDiv.style.display = 'none';
+            }
         }
 
         async function editDevice(deviceId) {
