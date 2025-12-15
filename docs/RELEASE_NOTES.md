@@ -215,6 +215,95 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
+## v1.0.32 - Bidirectional Control Foundation (2025-12-15)
+
+### 🔄 New Features
+- **Bidirectional Control** - Foundation for sending commands to EnOcean devices
+- **Command Translation** - Translate MQTT commands to EnOcean telegrams
+- **RPS Button Emulation** - Virtual rocker switch support
+- **A5-38-08 Support** - Central Command profile for actuators
+
+### 🔧 Technical Details
+- New `CommandTranslator` class for command translation
+- Support for switch ON/OFF commands
+- Support for dimming commands (brightness 0-255)
+- RPS button press emulation for F6-02 devices
+- MQTT command subscription and handling
+
+### 📝 Modified Files
+- `addon/rootfs/app/core/command_translator.py` - New command translator (NEW)
+- `addon/rootfs/app/main.py` - Command handling integration
+- `addon/rootfs/app/core/mqtt_handler.py` - Command subscription
+- `addon/config.yaml` - Version bump to 1.0.32
+
+### 🎯 Benefits
+- ✅ Control EnOcean devices from Home Assistant
+- ✅ Switch and dimmer support
+- ✅ Foundation for covers and other actuators
+- ✅ Bidirectional communication
+
+---
+
+## v1.0.31 - Enhanced Device Management (2025-12-15)
+
+### 🔧 New Features
+- **Improved Web UI** - Better device management interface
+- **Device Enable/Disable** - Toggle devices without deleting
+- **Enhanced Discovery** - Better MQTT discovery handling
+- **State Persistence** - Improved state restoration
+
+### 📝 Modified Files
+- `addon/rootfs/app/web_ui/templates/dashboard_full.html` - UI improvements
+- `addon/rootfs/app/core/device_manager.py` - Enable/disable support
+- `addon/config.yaml` - Version bump to 1.0.31
+
+### 🎯 Benefits
+- ✅ Better device management
+- ✅ Temporary device disabling
+- ✅ Improved user experience
+
+---
+
+## v1.0.30 - CRITICAL BUG FIX (2025-12-15)
+
+### 🚨 Critical Fix
+- **Sender ID Extraction** - Fixed fundamental bug in ESP3 packet parsing
+- **RPS Device Support** - F6 devices (rocker switches) now work correctly
+- **All Device Types** - F6, A5, D5, D2 all now work properly
+
+### 🐛 Bug Description
+The sender ID extraction was incorrect - it assumed sender ID came after RORG byte, but it actually comes at the END (last 4 bytes before status byte).
+
+### ✅ Fix Details
+- Fixed `get_sender_id()` to use `data[-5:-1]` (last 4 bytes before status)
+- Fixed `get_data_bytes()` to use `data[1:-5]` (skip RORG and last 5 bytes)
+- Removed A5-specific workaround (no longer needed)
+- Verified by 3 independent sources (Python enocean library, ESP3 spec, HA core)
+
+### 📊 Impact
+**Before Fix:**
+- ✅ A5 (4BS) devices worked (with workaround)
+- ❌ F6 (RPS) devices failed
+- ❌ D5 (1BS) devices likely failed
+- ❌ D2 (VLD) devices likely failed
+
+**After Fix:**
+- ✅ ALL device types work correctly!
+
+### 📝 Modified Files
+- `addon/rootfs/app/core/esp3_protocol.py` - Fixed sender ID extraction
+- `addon/rootfs/app/main.py` - Removed workaround
+- `addon/config.yaml` - Version bump to 1.0.30
+
+### 🎯 Benefits
+- ✅ FT55 rocker switches now work
+- ✅ All EnOcean device types supported
+- ✅ Cleaner code without workarounds
+- ✅ Follows ESP3 specification
+- ✅ Backward compatible (Kessel Staufix still works)
+
+---
+
 ## Changelog Summary
 
 | Version | Date | Key Features |
@@ -222,7 +311,9 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 | v1.0.35 | 2025-12-15 | RGB Lighting Support |
 | v1.0.34 | 2025-12-15 | Searchable Profile Selector + D2-01-12 |
 | v1.0.33 | 2025-12-15 | State Feedback & Command Confirmation |
-| v1.0.32 | 2025-12-14 | Previous stable release |
+| v1.0.32 | 2025-12-15 | Bidirectional Control Foundation |
+| v1.0.31 | 2025-12-15 | Enhanced Device Management |
+| v1.0.30 | 2025-12-15 | CRITICAL BUG FIX - Sender ID Extraction |
 
 ---
 
