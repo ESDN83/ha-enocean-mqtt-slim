@@ -13,6 +13,7 @@ from core.mqtt_handler import MQTTHandler
 from core.device_manager import DeviceManager
 from core.state_persistence import StatePersistence
 from core.command_translator import CommandTranslator
+from core.command_tracker import CommandTracker
 from eep.loader import EEPLoader
 from eep.parser import EEPParser
 from service_state import service_state
@@ -41,6 +42,7 @@ class EnOceanMQTTService:
         self.eep_loader = None
         self.eep_parser = None
         self.command_translator = None
+        self.command_tracker = None
         self.running = False
         
         # Configuration from environment
@@ -124,6 +126,14 @@ class EnOceanMQTTService:
         self.command_translator = CommandTranslator(self.eep_loader)
         logger.info("✓ Command translator initialized")
         
+        # Initialize command tracker
+        logger.info("Initializing command tracker...")
+        self.command_tracker = CommandTracker()
+        self.command_tracker.set_confirmation_callback(self.on_command_confirmed)
+        self.command_tracker.set_timeout_callback(self.on_command_timeout)
+        self.command_tracker.start()
+        logger.info("✓ Command tracker initialized")
+        
         # Initialize MQTT
         logger.info(f"Connecting to MQTT broker: {self.mqtt_host}:{self.mqtt_port}")
         if self.mqtt_user:
@@ -162,6 +172,31 @@ class EnOceanMQTTService:
         logger.info("=" * 60)
         
         return True
+    
+    async def on_command_confirmed(self, device_id: str, entity: str, command: dict, state_data: dict):
+        """
+        Callback when command is confirmed by device
+        
+        Args:
+            device_id: Device ID
+            entity: Entity name
+            command: Original command
+            state_data: Confirmed state data from device
+        """
+        # State is already published by process_telegram, no need to republish
+        logger.info(f"   🎯 Command confirmation processed for {device_id}/{entity}")
+    
+    async def on_command_timeout(self, device_id: str, entity: str, command: dict):
+        """
+        Callback when command times out without confirmation
+        
+        Args:
+            device_id: Device ID
+            entity: Entity name
+            command: Original command that timed out
+        """
+        # Optionally could revert to last known state or mark as unavailable
+        logger.warning(f"   ⚠️  Command timeout - device may not have responded")
     
     async def publish_device_discovery(self, device: dict):
         """Publish MQTT discovery for a device"""
@@ -399,6 +434,10 @@ class EnOceanMQTTService:
                 parsed_data['last_seen'] = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
                 logger.info(f"  Parsed data: {parsed_data}")
+                
+                # Check for command confirmation
+                if self.command_tracker:
+                    await self.command_tracker.check_telegram(sender_id, parsed_data)
 
                 # Save state for persistence
                 if self.state_persistence:
@@ -486,6 +525,27 @@ class EnOceanMQTTService:
             
             if success:
                 logger.info(f"   ✅ Command sent successfully!")
+                
+                # Track command for confirmation
+                if self.command_tracker:
+                    # Create expected state from command
+                    expected_state = {}
+                    if 'state' in command:
+                        expected_state[entity] = 1 if command['state'].upper() == 'ON' else 0
+                    elif 'brightness' in command:
+                        expected_state[entity] = command['brightness']
+                    elif 'position' in command:
+                        expected_state[entity] = command['position']
+                    
+                    if expected_state:
+                        self.command_tracker.add_pending_command(
+                            device_id, 
+                            entity, 
+                            command, 
+                            expected_state,
+                            timeout=5.0
+                        )
+                        logger.info(f"   📋 Tracking command for confirmation (timeout: 5s)")
                 
                 # Publish optimistic state update
                 if self.mqtt_handler and self.mqtt_handler.connected:
@@ -617,6 +677,9 @@ class EnOceanMQTTService:
         """Shutdown service"""
         logger.info("Shutting down...")
         self.running = False
+        
+        if self.command_tracker:
+            self.command_tracker.stop()
         
         if self.serial_handler:
             self.serial_handler.stop_reading()
