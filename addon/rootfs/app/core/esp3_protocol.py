@@ -252,6 +252,90 @@ class ESP3Packet:
         
         return packet
     
+    @classmethod
+    def create_radio_packet(cls, sender_id: str, destination_id: str, rorg: int, data_bytes: bytes, status: int = 0x00) -> 'ESP3Packet':
+        """
+        Create a radio telegram packet for sending commands to devices
+        
+        Args:
+            sender_id: Sender ID (gateway base ID) as hex string (e.g., 'ff800000')
+            destination_id: Destination device ID as hex string (e.g., '05834fa4')
+            rorg: RORG byte (0xA5 for 4BS, 0xF6 for RPS, 0xD2 for VLD)
+            data_bytes: Data bytes (without RORG, sender ID, or status)
+            status: Status byte (default 0x00)
+        
+        Returns:
+            ESP3Packet ready to send
+        """
+        packet = cls()
+        packet.packet_type = cls.PACKET_TYPE_RADIO_ERP1
+        
+        # Convert IDs to bytes
+        sender_id_bytes = bytes.fromhex(sender_id)
+        destination_id_bytes = bytes.fromhex(destination_id)
+        
+        # Build packet data: RORG + Data + Sender ID + Status
+        packet.data = bytes([rorg]) + data_bytes + sender_id_bytes + bytes([status])
+        packet.data_length = len(packet.data)
+        
+        # Build optional data: SubTelNum + Destination ID + dBm + Security Level
+        # SubTelNum: 3 (number of subtelegrams)
+        # Destination ID: 4 bytes
+        # dBm: 0xFF (not used for sending)
+        # Security Level: 0 (no encryption)
+        packet.optional_data = bytes([0x03]) + destination_id_bytes + bytes([0xFF, 0x00])
+        packet.optional_length = len(packet.optional_data)
+        
+        logger.debug(f"Created radio packet: RORG={hex(rorg)}, sender={sender_id}, dest={destination_id}, data={data_bytes.hex()}")
+        
+        return packet
+    
+    @classmethod
+    def create_rps_packet(cls, sender_id: str, destination_id: str, button_code: int, pressed: bool = True) -> 'ESP3Packet':
+        """
+        Create an RPS (F6) telegram for rocker switch emulation
+        
+        Args:
+            sender_id: Sender ID (gateway base ID) as hex string
+            destination_id: Destination device ID as hex string
+            button_code: Button code (0x10=A0, 0x30=A1, 0x50=B0, 0x70=B1)
+            pressed: True for button pressed, False for released
+        
+        Returns:
+            ESP3Packet for RPS telegram
+        """
+        # RPS data byte:
+        # Bits 7-5: R1 (rocker first action)
+        # Bit 4: EB (energy bow - 1=pressed, 0=released)
+        # Bits 3-1: R2 (rocker second action)
+        # Bit 0: SA (second action valid)
+        
+        if pressed:
+            data_byte = button_code | 0x10  # Set EB bit (pressed)
+        else:
+            data_byte = 0x00  # All bits 0 (released)
+        
+        # Status byte for RPS: T21=1, NU=1 for pressed, NU=0 for released
+        status = 0x30 if pressed else 0x20
+        
+        return cls.create_radio_packet(sender_id, destination_id, 0xF6, bytes([data_byte]), status)
+    
+    @classmethod
+    def create_4bs_packet(cls, sender_id: str, destination_id: str, db3: int, db2: int, db1: int, db0: int) -> 'ESP3Packet':
+        """
+        Create a 4BS (A5) telegram for actuator control
+        
+        Args:
+            sender_id: Sender ID (gateway base ID) as hex string
+            destination_id: Destination device ID as hex string
+            db3, db2, db1, db0: Data bytes
+        
+        Returns:
+            ESP3Packet for 4BS telegram
+        """
+        data_bytes = bytes([db3, db2, db1, db0])
+        return cls.create_radio_packet(sender_id, destination_id, 0xA5, data_bytes, 0x00)
+    
     def __repr__(self) -> str:
         return (f"ESP3Packet(type={hex(self.packet_type)}, "
                 f"data_len={self.data_length}, "

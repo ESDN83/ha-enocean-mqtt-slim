@@ -12,6 +12,7 @@ from core.esp3_protocol import ESP3Packet
 from core.mqtt_handler import MQTTHandler
 from core.device_manager import DeviceManager
 from core.state_persistence import StatePersistence
+from core.command_translator import CommandTranslator
 from eep.loader import EEPLoader
 from eep.parser import EEPParser
 from service_state import service_state
@@ -39,6 +40,7 @@ class EnOceanMQTTService:
         self.state_persistence = None
         self.eep_loader = None
         self.eep_parser = None
+        self.command_translator = None
         self.running = False
         
         # Configuration from environment
@@ -117,6 +119,11 @@ class EnOceanMQTTService:
         else:
             logger.info("State restoration disabled")
         
+        # Initialize command translator
+        logger.info("Initializing command translator...")
+        self.command_translator = CommandTranslator(self.eep_loader)
+        logger.info("✓ Command translator initialized")
+        
         # Initialize MQTT
         logger.info(f"Connecting to MQTT broker: {self.mqtt_host}:{self.mqtt_port}")
         if self.mqtt_user:
@@ -134,6 +141,12 @@ class EnOceanMQTTService:
             await asyncio.sleep(1)
             if self.mqtt_handler.connected:
                 logger.info("✓ MQTT connected successfully")
+                
+                # Subscribe to command topics
+                if self.mqtt_handler.subscribe_commands(self.handle_command):
+                    logger.info("✓ Subscribed to MQTT command topics")
+                else:
+                    logger.warning("Failed to subscribe to MQTT command topics")
                 
                 # Publish discovery for all configured devices
                 for device in self.device_manager.list_devices():
@@ -159,15 +172,31 @@ class EnOceanMQTTService:
                 logger.warning(f"EEP profile {device['eep']} not found for device {device['id']}")
                 return
             
+            # Check if device is controllable
+            is_controllable = self.command_translator.is_controllable(device['eep'])
+            
             # Publish discovery for each entity
             entities = profile.get_entities()
             for entity in entities:
-                self.mqtt_handler.publish_discovery(device, entity)
+                # Determine if this specific entity is controllable
+                # For now, mark all entities of controllable devices as controllable
+                # In future, could be more granular (e.g., only switches, not sensors)
+                entity_controllable = is_controllable
+                
+                # Override: sensors are never controllable, only switches/lights/covers
+                component = entity.get('component', 'sensor')
+                if component in ['sensor', 'binary_sensor']:
+                    entity_controllable = False
+                
+                self.mqtt_handler.publish_discovery(device, entity, entity_controllable)
             
             # Publish initial availability
             self.mqtt_handler.publish_availability(device['id'], True)
             
-            logger.info(f"Published discovery for device {device['id']} ({device['name']})")
+            if is_controllable:
+                logger.info(f"Published discovery for device {device['id']} ({device['name']}) - CONTROLLABLE ✅")
+            else:
+                logger.info(f"Published discovery for device {device['id']} ({device['name']})")
             
         except Exception as e:
             logger.error(f"Error publishing device discovery: {e}")
@@ -362,21 +391,32 @@ class EnOceanMQTTService:
             
             # Parse telegram
             parsed_data = self.eep_parser.parse_telegram_with_full_data(packet.data, profile)
-            
+
             if parsed_data:
                 # Add RSSI and timestamp to parsed data
                 from datetime import datetime, timezone
                 parsed_data['rssi'] = rssi
                 parsed_data['last_seen'] = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-                
+
                 logger.info(f"  Parsed data: {parsed_data}")
-                
+
                 # Save state for persistence
                 if self.state_persistence:
                     self.state_persistence.save_state(sender_id, parsed_data)
-                
-                # Publish to MQTT (with retain flag for persistence)
+
+                # IMPORTANT: Ensure MQTT discovery is published BEFORE state data
+                # This prevents HA from creating "unknown" devices
                 if self.mqtt_handler and self.mqtt_handler.connected:
+                    # Check if this is the first telegram from this device (no discovery published yet)
+                    # We track this by checking if device has 'discovery_published' flag
+                    if not device.get('discovery_published', False):
+                        logger.info(f"  📢 First telegram from {sender_id}, publishing discovery first...")
+                        await self.publish_device_discovery(device)
+                        # Mark discovery as published
+                        device['discovery_published'] = True
+                        self.device_manager.devices[sender_id] = device
+                    
+                    # Now publish state data (discovery is guaranteed to exist)
                     self.mqtt_handler.publish_state(sender_id, parsed_data, retain=True)
                     self.mqtt_handler.publish_availability(sender_id, True)
                     logger.info(f"  → Published to MQTT (retained)")
@@ -387,6 +427,87 @@ class EnOceanMQTTService:
             
         except Exception as e:
             logger.error(f"Error processing telegram: {e}", exc_info=True)
+    
+    async def handle_command(self, device_id: str, entity: str, command: dict):
+        """
+        Handle command from MQTT (Home Assistant)
+        
+        Args:
+            device_id: Device ID
+            entity: Entity name (e.g., "switch", "light")
+            command: Command dictionary (e.g., {"state": "ON"})
+        """
+        try:
+            logger.info("=" * 80)
+            logger.info(f"🎮 COMMAND RECEIVED")
+            logger.info(f"   Device ID: {device_id}")
+            logger.info(f"   Entity: {entity}")
+            logger.info(f"   Command: {command}")
+            
+            # Check if serial handler available
+            if not self.serial_handler:
+                logger.error("   ❌ Serial handler not available, cannot send commands")
+                return
+            
+            # Get device
+            device = self.device_manager.get_device(device_id)
+            if not device:
+                logger.error(f"   ❌ Device {device_id} not found")
+                return
+            
+            if not device.get('enabled'):
+                logger.warning(f"   ⚠️  Device {device_id} is disabled")
+                return
+            
+            logger.info(f"   ✅ Device: {device['name']} ({device['eep']})")
+            
+            # Translate command to EnOcean telegram
+            result = self.command_translator.translate_command(device, entity, command)
+            if not result:
+                logger.error(f"   ❌ Could not translate command for {device['eep']}")
+                return
+            
+            command_type, rorg_or_button, data_bytes = result
+            
+            # Send command based on type
+            if command_type == 'rps':
+                # RPS button press
+                button_code = rorg_or_button
+                logger.info(f"   📤 Sending RPS command: button={hex(button_code)}")
+                success = await self.serial_handler.send_rps_command(device_id, button_code)
+            elif command_type == 'telegram':
+                # Generic telegram
+                rorg = rorg_or_button
+                logger.info(f"   📤 Sending telegram: RORG={hex(rorg)}, data={data_bytes.hex()}")
+                success = await self.serial_handler.send_telegram(device_id, rorg, data_bytes)
+            else:
+                logger.error(f"   ❌ Unknown command type: {command_type}")
+                return
+            
+            if success:
+                logger.info(f"   ✅ Command sent successfully!")
+                
+                # Publish optimistic state update
+                if self.mqtt_handler and self.mqtt_handler.connected:
+                    # Create state update from command
+                    state_update = {}
+                    if 'state' in command:
+                        state_update[entity] = 1 if command['state'].upper() == 'ON' else 0
+                    elif 'brightness' in command:
+                        state_update[entity] = command['brightness']
+                    elif 'position' in command:
+                        state_update[entity] = command['position']
+                    
+                    if state_update:
+                        self.mqtt_handler.publish_state(device_id, state_update, retain=True)
+                        logger.info(f"   ✅ Published optimistic state: {state_update}")
+            else:
+                logger.error(f"   ❌ Failed to send command")
+            
+            logger.info("=" * 80)
+            
+        except Exception as e:
+            logger.error(f"Error handling command: {e}", exc_info=True)
     
     async def run_serial_reader(self):
         """Run serial reader task"""

@@ -204,14 +204,23 @@ async def create_device(device: DeviceCreate):
     if not success:
         raise HTTPException(status_code=500, detail="Failed to add device")
     
-    # Publish MQTT discovery if service is available
+    # Publish MQTT discovery immediately if service is available
     if service_state.service:
         try:
-            import asyncio
             device_dict = device_manager.get_device(device.id)
+            logger.info(f"Publishing MQTT discovery for new device {device.id}")
             await service_state.service.publish_device_discovery(device_dict)
+            logger.info(f"MQTT discovery published successfully for {device.id}")
+            
+            # Mark discovery as published to prevent republishing on first telegram
+            device_dict['discovery_published'] = True
+            device_manager.devices[device.id] = device_dict
+            
         except Exception as e:
-            logger.error(f"Error publishing discovery: {e}")
+            logger.error(f"Error publishing discovery for {device.id}: {e}", exc_info=True)
+            # Don't fail the request, but log the error
+    else:
+        logger.warning(f"Service not available, MQTT discovery not published for {device.id}")
     
     return {"success": True, "device_id": device.id}
 
@@ -241,6 +250,9 @@ async def update_device(device_id: str, update: DeviceUpdate):
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
     
+    # Track if EEP changed (requires republishing discovery)
+    eep_changed = False
+    
     # Update fields
     if update.name is not None:
         device['name'] = update.name
@@ -249,6 +261,8 @@ async def update_device(device_id: str, update: DeviceUpdate):
         eep_loader = service_state.get_eep_loader()
         if eep_loader and not eep_loader.get_profile(update.eep):
             raise HTTPException(status_code=400, detail=f"EEP profile {update.eep} not found")
+        if device['eep'] != update.eep:
+            eep_changed = True
         device['eep'] = update.eep
     if update.manufacturer is not None:
         device['manufacturer'] = update.manufacturer
@@ -257,6 +271,15 @@ async def update_device(device_id: str, update: DeviceUpdate):
     
     device_manager.devices[device_id] = device
     device_manager.save_devices()
+    
+    # Republish MQTT discovery if EEP changed
+    if eep_changed and service_state.service:
+        try:
+            logger.info(f"EEP changed for device {device_id}, republishing MQTT discovery")
+            await service_state.service.publish_device_discovery(device)
+            logger.info(f"MQTT discovery republished successfully for {device_id}")
+        except Exception as e:
+            logger.error(f"Error republishing discovery for {device_id}: {e}", exc_info=True)
     
     return {"success": True}
 

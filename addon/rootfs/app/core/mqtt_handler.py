@@ -29,6 +29,7 @@ class MQTTHandler:
         self.password = password
         self.client = None
         self.connected = False
+        self.command_callback = None
         
     def connect(self) -> bool:
         """Connect to MQTT broker"""
@@ -74,13 +75,14 @@ class MQTTHandler:
         else:
             logger.info("Disconnected from MQTT broker")
     
-    def publish_discovery(self, device: Dict[str, Any], entity: Dict[str, Any]) -> bool:
+    def publish_discovery(self, device: Dict[str, Any], entity: Dict[str, Any], is_controllable: bool = False) -> bool:
         """
         Publish Home Assistant MQTT discovery message
         
         Args:
             device: Device information dict
             entity: Entity information dict
+            is_controllable: Whether this entity supports commands
             
         Returns:
             True if successful, False otherwise
@@ -125,6 +127,38 @@ class MQTTHandler:
                 # For regular sensors, use value directly
                 payload['value_template'] = f"{{{{ value_json.{entity_shortcut} }}}}"
             
+            # Add command topic for controllable entities
+            if is_controllable:
+                command_topic = f"enocean/{device_id}/set/{entity_shortcut}"
+                payload['command_topic'] = command_topic
+                
+                # Add component-specific command fields
+                if component == 'switch':
+                    payload['payload_on'] = '{"state": "ON"}'
+                    payload['payload_off'] = '{"state": "OFF"}'
+                    payload['state_on'] = 1
+                    payload['state_off'] = 0
+                    payload['optimistic'] = False
+                elif component == 'light':
+                    payload['payload_on'] = '{"state": "ON"}'
+                    payload['payload_off'] = '{"state": "OFF"}'
+                    payload['state_on'] = 1
+                    payload['state_off'] = 0
+                    payload['optimistic'] = False
+                    # Add brightness support if entity supports it
+                    if 'brightness' in entity.get('name', '').lower():
+                        payload['brightness_command_topic'] = command_topic
+                        payload['brightness_scale'] = 255
+                        payload['brightness_state_topic'] = f"enocean/{device_id}/state"
+                        payload['brightness_value_template'] = f"{{{{ value_json.{entity_shortcut} }}}}"
+                elif component == 'cover':
+                    payload['position_topic'] = f"enocean/{device_id}/state"
+                    payload['set_position_topic'] = command_topic
+                    payload['position_template'] = f"{{{{ value_json.{entity_shortcut} }}}}"
+                    payload['optimistic'] = False
+                
+                logger.debug(f"Added command topic for controllable entity: {command_topic}")
+            
             # Add optional fields
             if entity.get('device_class'):
                 payload['device_class'] = entity['device_class']
@@ -137,7 +171,7 @@ class MQTTHandler:
             result = self.client.publish(topic, json.dumps(payload), qos=1, retain=True)
             
             if result.rc == mqtt.MQTT_ERR_SUCCESS:
-                logger.info(f"Published discovery for {unique_id}")
+                logger.info(f"Published discovery for {unique_id} (controllable={is_controllable})")
                 return True
             else:
                 logger.error(f"Failed to publish discovery for {unique_id}: {result.rc}")
@@ -243,3 +277,80 @@ class MQTTHandler:
         except Exception as e:
             logger.error(f"Error removing device: {e}")
             return False
+    
+    def subscribe_commands(self, callback) -> bool:
+        """
+        Subscribe to command topics from Home Assistant
+        
+        Args:
+            callback: Async function to call when command received
+                     Signature: async def callback(device_id: str, entity: str, command: dict)
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self.connected:
+            logger.warning("Not connected to MQTT broker, cannot subscribe to commands")
+            return False
+        
+        try:
+            self.command_callback = callback
+            
+            # Subscribe to all command topics: enocean/+/set/#
+            topic = "enocean/+/set/#"
+            self.client.subscribe(topic, qos=1)
+            
+            # Set message callback
+            self.client.on_message = self._on_command_message
+            
+            logger.info(f"✓ Subscribed to command topic: {topic}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error subscribing to commands: {e}")
+            return False
+    
+    def _on_command_message(self, client, userdata, msg):
+        """
+        Callback when command message received
+        
+        Topic format: enocean/{device_id}/set/{entity}
+        Payload: JSON with command data
+        """
+        try:
+            # Parse topic
+            topic_parts = msg.topic.split('/')
+            if len(topic_parts) < 4 or topic_parts[0] != 'enocean' or topic_parts[2] != 'set':
+                logger.warning(f"Invalid command topic format: {msg.topic}")
+                return
+            
+            device_id = topic_parts[1]
+            entity = topic_parts[3]
+            
+            # Parse payload
+            try:
+                command = json.loads(msg.payload.decode('utf-8'))
+            except json.JSONDecodeError:
+                # Try simple string payload (ON/OFF)
+                payload_str = msg.payload.decode('utf-8')
+                command = {'state': payload_str}
+            
+            logger.info(f"📥 Command received: device={device_id}, entity={entity}, command={command}")
+            
+            # Call callback if set
+            if self.command_callback:
+                # Schedule async callback
+                import asyncio
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        asyncio.create_task(self.command_callback(device_id, entity, command))
+                    else:
+                        loop.run_until_complete(self.command_callback(device_id, entity, command))
+                except Exception as e:
+                    logger.error(f"Error calling command callback: {e}", exc_info=True)
+            else:
+                logger.warning("No command callback set, ignoring command")
+                
+        except Exception as e:
+            logger.error(f"Error processing command message: {e}", exc_info=True)

@@ -280,3 +280,117 @@ class SerialHandler:
         """Stop continuous reading"""
         self.running = False
         logger.info("Stopped reading from serial port")
+    
+    async def send_telegram(self, destination_id: str, rorg: int, data_bytes: bytes, status: int = 0x00) -> bool:
+        """
+        Send EnOcean telegram to a device
+        
+        Args:
+            destination_id: Destination device ID as hex string (e.g., '05834fa4')
+            rorg: RORG byte (0xA5 for 4BS, 0xF6 for RPS, 0xD2 for VLD)
+            data_bytes: Data bytes (without RORG, sender ID, or status)
+            status: Status byte (default 0x00)
+            
+        Returns:
+            True if sent successfully, False otherwise
+        """
+        # Get gateway base ID (sender ID)
+        if not self.base_id:
+            base_id = await self.get_base_id()
+            if not base_id:
+                logger.error("Cannot send telegram: gateway base ID not available")
+                return False
+        
+        # Create radio packet
+        packet = ESP3Packet.create_radio_packet(
+            self.base_id,
+            destination_id,
+            rorg,
+            data_bytes,
+            status
+        )
+        
+        # Send packet
+        logger.info(f"📤 Sending telegram to {destination_id}: RORG={hex(rorg)}, data={data_bytes.hex()}")
+        success = await self.write_packet(packet)
+        
+        if success:
+            logger.info(f"✅ Telegram sent successfully")
+        else:
+            logger.error(f"❌ Failed to send telegram")
+        
+        return success
+    
+    async def send_rps_command(self, destination_id: str, button_code: int, press_duration: float = 0.1) -> bool:
+        """
+        Send RPS (rocker switch) command with press and release
+        
+        Args:
+            destination_id: Destination device ID as hex string
+            button_code: Button code (0x10=A0, 0x30=A1, 0x50=B0, 0x70=B1)
+            press_duration: Duration to hold button in seconds (default 0.1)
+            
+        Returns:
+            True if sent successfully, False otherwise
+        """
+        # Get gateway base ID
+        if not self.base_id:
+            base_id = await self.get_base_id()
+            if not base_id:
+                logger.error("Cannot send RPS command: gateway base ID not available")
+                return False
+        
+        logger.info(f"📤 Sending RPS command to {destination_id}: button={hex(button_code)}")
+        
+        # Send button press
+        packet_press = ESP3Packet.create_rps_packet(self.base_id, destination_id, button_code, pressed=True)
+        if not await self.write_packet(packet_press):
+            logger.error("❌ Failed to send button press")
+            return False
+        
+        logger.info(f"   ✅ Button press sent")
+        
+        # Wait for press duration
+        await asyncio.sleep(press_duration)
+        
+        # Send button release
+        packet_release = ESP3Packet.create_rps_packet(self.base_id, destination_id, button_code, pressed=False)
+        if not await self.write_packet(packet_release):
+            logger.error("❌ Failed to send button release")
+            return False
+        
+        logger.info(f"   ✅ Button release sent")
+        logger.info(f"✅ RPS command completed successfully")
+        
+        return True
+    
+    async def send_4bs_command(self, destination_id: str, db3: int, db2: int, db1: int, db0: int) -> bool:
+        """
+        Send 4BS (A5) command to actuator
+        
+        Args:
+            destination_id: Destination device ID as hex string
+            db3, db2, db1, db0: Data bytes
+            
+        Returns:
+            True if sent successfully, False otherwise
+        """
+        # Get gateway base ID
+        if not self.base_id:
+            base_id = await self.get_base_id()
+            if not base_id:
+                logger.error("Cannot send 4BS command: gateway base ID not available")
+                return False
+        
+        logger.info(f"📤 Sending 4BS command to {destination_id}: DB3={hex(db3)}, DB2={hex(db2)}, DB1={hex(db1)}, DB0={hex(db0)}")
+        
+        # Create and send packet
+        packet = ESP3Packet.create_4bs_packet(self.base_id, destination_id, db3, db2, db1, db0)
+        success = await self.write_packet(packet)
+        
+        if success:
+            logger.info(f"✅ 4BS command sent successfully")
+        else:
+            logger.error(f"❌ Failed to send 4BS command")
+        
+        return success
