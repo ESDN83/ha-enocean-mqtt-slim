@@ -156,7 +156,7 @@ You can add your own custom EEP profiles or override built-in profiles by placin
 
 For detailed instructions, JSON format reference, and 150+ examples:
 
-👉 **[Custom EEP Profiles Guide](https://github.com/ESDN83/ha-enocean-mqtt-slim/blob/main/CUSTOM_EEP_PROFILES_GUIDE.md)**
+👉 **[Custom EEP Profiles Guide](https://github.com/ESDN83/ha-enocean-mqtt-slim/blob/main/docs/CUSTOM_EEP_PROFILES_GUIDE.md)**
 
 **Browse Built-in Profiles for Examples:**
 
