@@ -351,8 +351,12 @@ async def suggest_profiles(device_id: str):
     """
     logger.info(f"=== API /api/suggest-profiles/{device_id} called ===")
     try:
+        # Normalize device ID to lowercase for lookup (telegrams use lowercase)
+        device_id_lower = device_id.lower()
+        logger.info(f"Normalized device ID for lookup: {device_id_lower}")
+        
         # Get cached detected profiles
-        detected_eeps = service_state.get_detected_profiles(device_id)
+        detected_eeps = service_state.get_detected_profiles(device_id_lower)
         
         if detected_eeps:
             # Get full profile information
