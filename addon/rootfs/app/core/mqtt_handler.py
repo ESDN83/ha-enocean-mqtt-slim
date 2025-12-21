@@ -124,6 +124,9 @@ class MQTTHandler:
             if component == 'binary_sensor':
                 # For binary sensors, convert 0/1 to OFF/ON
                 payload['value_template'] = f"{{% if value_json.{entity_shortcut} == 1 %}}ON{{% else %}}OFF{{% endif %}}"
+            elif component == 'switch':
+                # For switches, convert 0/1 to OFF/ON to match state_on/state_off
+                payload['value_template'] = f"{{% if value_json.{entity_shortcut} == 1 %}}ON{{% else %}}OFF{{% endif %}}"
             else:
                 # For regular sensors, use value directly
                 payload['value_template'] = f"{{{{ value_json.{entity_shortcut} }}}}"
@@ -137,8 +140,8 @@ class MQTTHandler:
                 if component == 'switch':
                     payload['payload_on'] = '{"state": "ON"}'
                     payload['payload_off'] = '{"state": "OFF"}'
-                    payload['state_on'] = 1
-                    payload['state_off'] = 0
+                    payload['state_on'] = "ON"
+                    payload['state_off'] = "OFF"
                     payload['optimistic'] = False
                 elif component == 'light':
                     payload['payload_on'] = '{"state": "ON"}'
