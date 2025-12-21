@@ -319,6 +319,12 @@ class EnOceanMQTTService:
                             logger.warning(f"      3. Enter Device ID: {sender_id}")
                             logger.warning(f"      4. Select one of the {len(matching_profiles)} profiles listed above")
                             logger.warning("")
+                            
+                            # Cache detected profiles for Web UI
+                            from service_state import service_state
+                            profile_eeps = [prof.eep for prof in matching_profiles]
+                            service_state.set_detected_profiles(sender_id, profile_eeps)
+                            
                             # Don't auto-add - require manual selection
                             detected_eep = None
                         else:

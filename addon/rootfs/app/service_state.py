@@ -25,6 +25,7 @@ class ServiceState:
         
         self.service = None
         self.gateway_info = {}
+        self.detected_profiles = {}  # Cache: device_id -> list of detected profile EEPs
         self._initialized = True
     
     def set_service(self, service):
@@ -76,6 +77,21 @@ class ServiceState:
         if self.service and self.service.mqtt_handler:
             return self.service.mqtt_handler
         return None
+    
+    def get_state_persistence(self):
+        """Get state persistence instance"""
+        if self.service and self.service.state_persistence:
+            return self.service.state_persistence
+        return None
+    
+    def set_detected_profiles(self, device_id: str, profile_eeps: list):
+        """Cache detected profiles for a device"""
+        self.detected_profiles[device_id] = profile_eeps
+        logger.info(f"Cached {len(profile_eeps)} detected profiles for device {device_id}")
+    
+    def get_detected_profiles(self, device_id: str) -> list:
+        """Get cached detected profiles for a device"""
+        return self.detected_profiles.get(device_id, [])
 
 
 # Global instance

@@ -347,26 +347,42 @@ async def disable_device(device_id: str):
 async def suggest_profiles(device_id: str):
     """
     Suggest compatible EEP profiles for a device ID
-    Looks in logs for detected profiles for this device
+    Returns profiles that were detected during teach-in
     """
     logger.info(f"=== API /api/suggest-profiles/{device_id} called ===")
     try:
-        # Check if device exists in state persistence (has sent telegrams)
-        state_persistence = service_state.get_state_persistence()
-        if state_persistence:
-            state = state_persistence.get_state(device_id)
-            if state:
-                logger.info(f"Device {device_id} has sent telegrams, checking logs...")
+        # Get cached detected profiles
+        detected_eeps = service_state.get_detected_profiles(device_id)
         
-        # Check main.py's teach-in detection cache
-        # For now, return empty list - we'll track detected profiles in a future enhancement
-        # The UI will show all profiles if no suggestions available
+        if detected_eeps:
+            # Get full profile information
+            eep_loader = service_state.get_eep_loader()
+            if eep_loader:
+                suggested_profiles = []
+                for eep in detected_eeps:
+                    profile = eep_loader.get_profile(eep)
+                    if profile:
+                        suggested_profiles.append({
+                            'eep': profile.eep,
+                            'title': profile.type_title,
+                            'description': profile.description,
+                            'manufacturer': profile.manufacturer
+                        })
+                
+                logger.info(f"Found {len(suggested_profiles)} suggested profiles for {device_id}")
+                return {
+                    "device_id": device_id,
+                    "suggested_profiles": suggested_profiles,
+                    "has_suggestions": True,
+                    "message": f"Found {len(suggested_profiles)} compatible profiles from teach-in detection."
+                }
         
+        logger.info(f"No suggested profiles found for {device_id}")
         return {
             "device_id": device_id,
             "suggested_profiles": [],
             "has_suggestions": False,
-            "message": "No teach-in data available. Please select profile manually."
+            "message": "No teach-in data available. All profiles shown."
         }
         
     except Exception as e:

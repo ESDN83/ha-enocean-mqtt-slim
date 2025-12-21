@@ -34,7 +34,7 @@
                 <i class="bi bi-radio-tower"></i> EnOcean MQTT Slim
             </span>
             <div>
-                <span class="badge bg-light text-dark me-2">v1.0.41</span>
+                <span class="badge bg-light text-dark me-2">v1.0.42</span>
                 <span class="badge bg-success" id="status-badge">Running</span>
             </div>
         </div>
@@ -470,10 +470,36 @@
                 renderEEPSelect(allEEPProfiles);
             }
             
+            // Add listener for profile selection to auto-populate name/manufacturer
+            const eepSelect = document.getElementById('deviceEEP');
+            eepSelect.removeEventListener('change', onProfileSelected);
+            eepSelect.addEventListener('change', onProfileSelected);
+            
             deviceModal.show();
         }
         
-        function formatDeviceId(event) {
+        async function onProfileSelected(event) {
+            const selectedEEP = event.target.value;
+            if (!selectedEEP) return;
+            
+            // Find the selected profile
+            const profile = allEEPProfiles.find(p => p.eep === selectedEEP);
+            if (!profile) return;
+            
+            // Auto-populate device name if it's empty or default
+            const nameInput = document.getElementById('deviceName');
+            if (!nameInput.value || nameInput.value === 'e.g., Staufix Control') {
+                nameInput.value = profile.title;
+            }
+            
+            // Auto-populate manufacturer if available and field is empty or default
+            const manufacturerInput = document.getElementById('deviceManufacturer');
+            if (profile.manufacturer && (!manufacturerInput.value || manufacturerInput.value === 'EnOcean')) {
+                manufacturerInput.value = profile.manufacturer;
+            }
+        }
+        
+        async function formatDeviceId(event) {
             let value = event.target.value.trim().toUpperCase();
             const helpDiv = document.getElementById('deviceIdHelp');
             const helpText = document.getElementById('deviceIdHelpText');
@@ -502,11 +528,43 @@
                 helpDiv.style.display = 'block';
                 helpDiv.className = 'form-text text-warning';
             } else if (value.length === 8) {
-                helpText.textContent = '✓ Valid device ID format';
+                helpText.textContent = '✓ Valid device ID format - Checking for detected profiles...';
                 helpDiv.style.display = 'block';
-                helpDiv.className = 'form-text text-success';
+                helpDiv.className = 'form-text text-info';
+                
+                // Fetch suggested profiles for this device ID
+                try {
+                    const response = await fetch(`api/suggest-profiles/${value}`);
+                    const data = await response.json();
+                    
+                    if (data.has_suggestions && data.suggested_profiles.length > 0) {
+                        // Filter EEP dropdown to show only suggested profiles
+                        const filtered = allEEPProfiles.filter(profile => 
+                            data.suggested_profiles.some(suggested => suggested.eep === profile.eep)
+                        );
+                        renderEEPSelect(filtered);
+                        
+                        helpText.textContent = `✓ Found ${data.suggested_profiles.length} compatible profile(s) from teach-in detection!`;
+                        helpDiv.className = 'form-text text-success';
+                        
+                        // Clear search box to show filtered results
+                        document.getElementById('eepSearch').value = '';
+                    } else {
+                        // No suggestions - show all profiles
+                        renderEEPSelect(allEEPProfiles);
+                        helpText.textContent = '✓ Valid device ID format (showing all profiles)';
+                        helpDiv.className = 'form-text text-success';
+                    }
+                } catch (error) {
+                    console.error('Error fetching profile suggestions:', error);
+                    renderEEPSelect(allEEPProfiles);
+                    helpText.textContent = '✓ Valid device ID format';
+                    helpDiv.className = 'form-text text-success';
+                }
             } else if (value.length === 0) {
                 helpDiv.style.display = 'none';
+                // Reset to all profiles
+                renderEEPSelect(allEEPProfiles);
             }
         }
 
