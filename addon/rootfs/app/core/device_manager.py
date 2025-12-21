@@ -25,12 +25,37 @@ class DeviceManager:
         self.devices: Dict[str, dict] = {}
         self.load_devices()
     
+    @staticmethod
+    def normalize_device_id(device_id: str) -> str:
+        """
+        Normalize device ID to lowercase 8-char hex without prefix
+        
+        Args:
+            device_id: Device ID in any format (0xABC123, ABC123, abc123)
+            
+        Returns:
+            Normalized lowercase hex string without 0x prefix
+        """
+        # Remove 0x prefix if present
+        if device_id.lower().startswith('0x'):
+            device_id = device_id[2:]
+        # Convert to lowercase
+        return device_id.lower()
+    
     def load_devices(self):
         """Load devices from file"""
         try:
             if self.data_file.exists():
                 with open(self.data_file, 'r') as f:
-                    self.devices = json.load(f)
+                    raw_devices = json.load(f)
+                
+                # Normalize all device IDs on load (handles legacy uppercase/0x prefixed IDs)
+                self.devices = {}
+                for device_id, device_data in raw_devices.items():
+                    normalized_id = self.normalize_device_id(device_id)
+                    device_data['id'] = normalized_id  # Update stored ID too
+                    self.devices[normalized_id] = device_data
+                
                 logger.info(f"Loaded {len(self.devices)} devices from {self.data_file}")
             else:
                 logger.info("No existing devices file, starting fresh")
@@ -65,6 +90,8 @@ class DeviceManager:
             True if successful, False otherwise
         """
         try:
+            # Normalize device ID to lowercase without 0x prefix
+            device_id = self.normalize_device_id(device_id)
             self.devices[device_id] = {
                 'id': device_id,
                 'name': name,
@@ -87,11 +114,13 @@ class DeviceManager:
         Get device by ID
         
         Args:
-            device_id: Device ID
+            device_id: Device ID (accepts any format: 0xABC123, ABC123, abc123)
             
         Returns:
             Device dict if found, None otherwise
         """
+        # Normalize device ID for lookup
+        device_id = self.normalize_device_id(device_id)
         return self.devices.get(device_id)
     
     def list_devices(self) -> List[dict]:
@@ -111,6 +140,7 @@ class DeviceManager:
             device_id: Device ID
             rssi: RSSI value (optional)
         """
+        device_id = self.normalize_device_id(device_id)
         if device_id in self.devices:
             self.devices[device_id]['last_seen'] = datetime.now().isoformat()
             if rssi is not None:
@@ -128,6 +158,7 @@ class DeviceManager:
             True if successful, False otherwise
         """
         try:
+            device_id = self.normalize_device_id(device_id)
             if device_id in self.devices:
                 del self.devices[device_id]
                 self.save_devices()
@@ -150,6 +181,7 @@ class DeviceManager:
             True if successful, False otherwise
         """
         try:
+            device_id = self.normalize_device_id(device_id)
             if device_id in self.devices:
                 self.devices[device_id]['enabled'] = enabled
                 self.save_devices()
