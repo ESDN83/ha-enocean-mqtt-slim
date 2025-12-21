@@ -47,12 +47,23 @@ class CommandTranslator:
         
         # D2-01-xx: Electronic switches and dimmers
         elif eep.startswith('D2-01'):
-            # VLD telegram - variable length
-            # For now, use simple ON/OFF via RPS emulation
-            logger.warning(f"D2-01-xx not fully implemented, using RPS emulation")
+            # VLD telegram for D2-01 actuators
+            # CMD 0x01 = Actuator Set Output
+            # DB_0 bits 7-1: Output value (0-100, 0=OFF, 100=ON)
+            # DB_0 bit 0: I/O channel (0)
+            if state.upper() == 'ON':
+                data_bytes = bytes([0x01, 0x01, 0x64, 0x00])  # CMD, Channel, Value 100%, reserved
+            else:
+                data_bytes = bytes([0x01, 0x01, 0x00, 0x00])  # CMD, Channel, Value 0%, reserved
+            return (0xD2, data_bytes)
+        
+        # Eltako actuator control (F6-02-01-actuator)
+        elif eep == 'F6-02-01-actuator':
+            # Return None to use RPS command instead
+            logger.info(f"F6-02-01-actuator: using RPS command for {state}")
             return None
         
-        # Virtual rocker switch (F6-02-01)
+        # Virtual rocker switch (F6-02-01) - sensors, not actuators
         elif eep == 'F6-02-01' or eep.startswith('F6-02'):
             # Use RPS button press to toggle
             # This will be handled separately by send_rps_command
@@ -192,10 +203,15 @@ class CommandTranslator:
                 rorg, data_bytes = result
                 return ('telegram', rorg, data_bytes)
             
-            # Fallback to RPS for switches
-            if eep.startswith('F6-02'):
-                # Use button A0 for toggle
-                return ('rps', 0x10, bytes())
+            # Fallback to RPS for actuators and switches
+            if eep == 'F6-02-01-actuator' or eep.startswith('F6-02'):
+                # Use rocker A0 for ON, A1 for OFF (Eltako convention)
+                if state.upper() == 'ON':
+                    button_code = 0x10  # A0 (rocker up) = ON
+                else:
+                    button_code = 0x30  # A1 (rocker down) = OFF
+                logger.info(f"RPS command: state={state} -> button_code={hex(button_code)}")
+                return ('rps', button_code, bytes())
         
         # Handle brightness commands
         if 'brightness' in command:

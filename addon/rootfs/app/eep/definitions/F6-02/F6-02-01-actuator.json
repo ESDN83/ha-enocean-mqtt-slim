@@ -1,0 +1,42 @@
+{
+  "eep": "F6-02-01-actuator",
+  "rorg_number": "0xF6",
+  "telegram": "RPS",
+  "func_number": "0x02",
+  "type_number": "0x01",
+  "type_title": "Eltako Actuator (F6-02 Control)",
+  "manufacturer": "Eltako",
+  "description": "For controlling Eltako actuators like FD62NPN, FSR61, FUD61NPN via F6-02 RPS telegrams. Use this profile for actuators that respond to wall switch commands.",
+  "bidirectional": false,
+  "objects": {
+    "switch": {
+      "name": "Switch",
+      "shortcut": "switch",
+      "component": "switch",
+      "device_class": "switch",
+      "icon": "mdi:light-switch",
+      "description": "On/Off control - sends RPS rocker switch commands to actuator"
+    },
+    "rssi": {
+      "name": "RSSI",
+      "component": "sensor",
+      "shortcut": "rssi",
+      "device_class": "signal_strength",
+      "unit": "dBm",
+      "icon": "mdi:wifi",
+      "description": "Signal strength (only if device sends feedback)"
+    }
+  },
+  "commands": {
+    "on": {
+      "type": "rps",
+      "button": "A0",
+      "description": "Press rocker A0 (top) to turn ON"
+    },
+    "off": {
+      "type": "rps",
+      "button": "A1",
+      "description": "Press rocker A1 (bottom) to turn OFF"
+    }
+  }
+}
