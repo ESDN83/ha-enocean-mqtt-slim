@@ -450,8 +450,26 @@ class EnOceanMQTTService:
                 logger.warning(f"   RSSI: {rssi} dBm")
                 logger.warning(f"   Data: {data_hex}")
                 logger.warning("")
-                logger.warning("   This device is not in your configuration.")
-                logger.warning("   Add it via Web UI if you want to use it.")
+                
+                # Try to suggest possible profiles based on RORG
+                matching_profiles = self.eep_loader.find_profiles_by_telegram(rorg)
+                if len(matching_profiles) > 0:
+                    logger.warning(f"   📋 Found {len(matching_profiles)} possible profiles for RORG {hex(rorg)}:")
+                    # Show first 10 matches
+                    for idx, prof in enumerate(matching_profiles[:10], 1):
+                        logger.warning(f"      {idx}. {prof.eep} - {prof.type_title}")
+                    if len(matching_profiles) > 10:
+                        logger.warning(f"      ... and {len(matching_profiles) - 10} more")
+                    logger.warning("")
+                
+                logger.warning("   ⚠️  MANUAL CONFIGURATION REQUIRED:")
+                logger.warning("      1. Go to Web UI")
+                logger.warning("      2. Click 'Add Device'")
+                logger.warning(f"      3. Enter Device ID: {sender_id}")
+                logger.warning("      4. Select the appropriate EEP profile")
+                if len(matching_profiles) > 0:
+                    logger.warning(f"      5. Choose from the {len(matching_profiles)} profiles listed above")
+                logger.warning("")
                 logger.info("=" * 80)
                 return
             
