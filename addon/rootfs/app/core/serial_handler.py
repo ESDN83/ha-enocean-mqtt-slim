@@ -68,23 +68,36 @@ class SerialHandler:
         
         try:
             # Wait for sync byte
-            logger.debug("🔍 Waiting for sync byte (0x55)...")
             bytes_read = 0
+            timeout_count = 0
+            logger.info("🔍 Waiting for sync byte (0x55)... Listening for EnOcean devices...")
+            
             while True:
                 byte = await asyncio.get_event_loop().run_in_executor(
                     None, self.serial.read, 1
                 )
+                
+                # If no byte received (timeout)
                 if not byte:
+                    timeout_count += 1
+                    if timeout_count % 10 == 0:  # Every 10 seconds
+                        logger.info(f"   Still waiting... ({timeout_count} seconds elapsed, 0 bytes received)")
                     await asyncio.sleep(0.01)
                     continue
                 
+                # We got a byte!
                 bytes_read += 1
-                if bytes_read % 100 == 0:
-                    logger.debug(f"   Read {bytes_read} bytes, still looking for sync...")
                 
+                # Log every 100 non-sync bytes
+                if bytes_read % 100 == 0:
+                    logger.info(f"   Read {bytes_read} bytes so far, still looking for sync...")
+                
+                # Log individual bytes in debug mode
                 logger.debug(f"   Read byte: 0x{byte[0]:02x}")
+                
+                # Check if it's the sync byte
                 if byte[0] == ESP3Packet.SYNC_BYTE:
-                    logger.info(f"✅ Found sync byte after {bytes_read} bytes!")
+                    logger.info(f"✅ Found sync byte (0x55) after reading {bytes_read} bytes!")
                     break
             
             # Read header (4 bytes)
