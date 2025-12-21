@@ -297,13 +297,17 @@ class ESP3Packet:
         
         Args:
             sender_id: Sender ID (gateway base ID) as hex string
-            destination_id: Destination device ID as hex string
+            destination_id: Destination device ID as hex string (ignored for RPS - uses broadcast)
             button_code: Button code (0x10=A0, 0x30=A1, 0x50=B0, 0x70=B1)
             pressed: True for button pressed, False for released
         
         Returns:
             ESP3Packet for RPS telegram
         """
+        # RPS telegrams are BROADCAST - destination is always FFFFFFFF
+        # Eltako actuators learn the SENDER ID and respond to broadcasts from that ID
+        broadcast_id = "FFFFFFFF"
+        
         # RPS data byte:
         # Bits 7-5: R1 (rocker first action)
         # Bit 4: EB (energy bow - 1=pressed, 0=released)
@@ -318,7 +322,9 @@ class ESP3Packet:
         # Status byte for RPS: T21=1, NU=1 for pressed, NU=0 for released
         status = 0x30 if pressed else 0x20
         
-        return cls.create_radio_packet(sender_id, destination_id, 0xF6, bytes([data_byte]), status)
+        logger.info(f"Creating RPS packet: sender={sender_id}, broadcast={broadcast_id}, button={hex(button_code)}, pressed={pressed}, data={hex(data_byte)}, status={hex(status)}")
+        
+        return cls.create_radio_packet(sender_id, broadcast_id, 0xF6, bytes([data_byte]), status)
     
     @classmethod
     def create_4bs_packet(cls, sender_id: str, destination_id: str, db3: int, db2: int, db1: int, db0: int) -> 'ESP3Packet':
