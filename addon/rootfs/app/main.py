@@ -268,11 +268,14 @@ class EnOceanMQTTService:
                 logger.warning(f"   RSSI: {rssi} dBm")
                 logger.warning(f"   Data: {data_hex}")
                 
-                # Try to auto-detect EEP profile from teach-in telegram
+                # Try to auto-detect EEP profile from telegram
                 detected_eep = None
+                detected_func = None
+                detected_type = None
                 device_name = f"Device {sender_id}"
+                matching_profiles = []
                 
-                # For 4BS (A5) teach-in telegrams with EEP
+                # For 4BS (A5) teach-in telegrams with EEP information
                 if rorg == 0xA5 and len(packet.data) >= 9:
                     # 4BS teach-in telegram format:
                     # Byte 0: RORG (A5)
@@ -292,19 +295,63 @@ class EnOceanMQTTService:
                         func = (db3 >> 2) & 0x3F  # 6 bits
                         type_val = ((db3 & 0x03) << 5) | ((db2 >> 3) & 0x1F)  # 7 bits
                         
-                        # Construct EEP code
-                        detected_eep = f"A5-{func:02X}-{type_val:02X}"
-                        logger.warning(f"   📋 Detected EEP: {detected_eep}")
+                        # Store FUNC and TYPE
+                        detected_func = func
+                        detected_type = type_val
                         
-                        # Try to find matching profile
-                        profile = self.eep_loader.get_profile(detected_eep)
-                        if profile:
-                            device_name = profile.type_title
-                            logger.warning(f"   ✅ Found profile: {device_name}")
+                        # Find matching profiles
+                        matching_profiles = self.eep_loader.find_profiles_by_telegram(rorg, func, type_val)
+                        
+                        if len(matching_profiles) == 1:
+                            # Exact match found
+                            detected_eep = matching_profiles[0].eep
+                            device_name = matching_profiles[0].type_title
+                            logger.warning(f"   ✅ Exact match: {detected_eep} - {device_name}")
+                        elif len(matching_profiles) > 1:
+                            # Multiple matches - log options
+                            logger.warning(f"   ⚠️  Multiple profiles match (FUNC={func:02X}, TYPE={type_val:02X}):")
+                            for idx, prof in enumerate(matching_profiles, 1):
+                                logger.warning(f"      {idx}. {prof.eep} - {prof.type_title}")
+                            # Use first one as default
+                            detected_eep = matching_profiles[0].eep
+                            device_name = matching_profiles[0].type_title
+                            logger.warning(f"   → Using first match: {detected_eep}")
                         else:
-                            logger.warning(f"   ⚠️  Profile {detected_eep} not in database")
+                            # No match found
+                            detected_eep = f"A5-{func:02X}-{type_val:02X}"
+                            logger.warning(f"   ⚠️  EEP {detected_eep} not in database")
                 
-                # Device name defaults to sender_id if no EEP detected
+                # For RPS (F6), D5, and other telegrams WITHOUT embedded teach-in info
+                elif rorg in [0xF6, 0xD5, 0xD2]:
+                    logger.warning(f"   📋 RORG {hex(rorg)} telegram detected")
+                    
+                    # Find all profiles matching this RORG
+                    matching_profiles = self.eep_loader.find_profiles_by_telegram(rorg)
+                    
+                    if len(matching_profiles) == 0:
+                        logger.warning(f"   ⚠️  No profiles found for RORG {hex(rorg)}")
+                    elif len(matching_profiles) == 1:
+                        # Only one profile for this RORG
+                        detected_eep = matching_profiles[0].eep
+                        device_name = matching_profiles[0].type_title
+                        logger.warning(f"   ✅ Auto-selected: {detected_eep} - {device_name}")
+                    else:
+                        # Multiple profiles available - user must choose
+                        logger.warning(f"   📋 {len(matching_profiles)} possible profiles for RORG {hex(rorg)}:")
+                        for idx, prof in enumerate(matching_profiles, 1):
+                            logger.warning(f"      {idx}. {prof.eep} - {prof.type_title}")
+                        logger.warning("")
+                        logger.warning("   ⚠️  MANUAL SELECTION REQUIRED:")
+                        logger.warning(f"      1. Go to Web UI")
+                        logger.warning(f"      2. Click 'Add Device'")
+                        logger.warning(f"      3. Enter Device ID: {sender_id}")
+                        logger.warning(f"      4. Select one of the {len(matching_profiles)} profiles listed above")
+                        logger.warning("")
+                        # Don't auto-add - require manual selection
+                        logger.warning("=" * 80)
+                        return
+                
+                # If no EEP detected at all
                 if not detected_eep:
                     device_name = f"Device {sender_id}"
                 

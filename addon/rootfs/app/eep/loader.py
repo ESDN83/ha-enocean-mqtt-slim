@@ -146,6 +146,41 @@ class EEPLoader:
         """
         return [p for p in self.profiles.values() if p.rorg == rorg]
     
+    def find_profiles_by_telegram(self, rorg: int, func: Optional[int] = None, type_val: Optional[int] = None) -> List[EEPProfile]:
+        """
+        Find EEP profiles matching telegram parameters
+        
+        Args:
+            rorg: RORG value (e.g., 0xF6, 0xA5, 0xD5)
+            func: FUNC number (optional, for precise matching)
+            type_val: TYPE number (optional, for precise matching)
+            
+        Returns:
+            List of matching profiles (exact match if func/type provided, all RORG matches otherwise)
+        """
+        matches = []
+        
+        for profile in self.profiles.values():
+            # Match RORG
+            if profile.rorg != rorg:
+                continue
+            
+            # If func and type specified, do exact match
+            if func is not None and type_val is not None:
+                try:
+                    profile_func = int(profile.func_number, 16) if isinstance(profile.func_number, str) else profile.func_number
+                    profile_type = int(profile.type_number, 16) if isinstance(profile.type_number, str) else profile.type_number
+                    
+                    if profile_func == func and profile_type == type_val:
+                        matches.append(profile)
+                except (ValueError, AttributeError):
+                    continue
+            else:
+                # Just RORG match
+                matches.append(profile)
+        
+        return matches
+    
     def list_profiles(self) -> List[dict]:
         """
         List all available profiles
