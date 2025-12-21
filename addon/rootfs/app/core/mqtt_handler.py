@@ -30,6 +30,7 @@ class MQTTHandler:
         self.client = None
         self.connected = False
         self.command_callback = None
+        self.event_loop = None
         
     def connect(self) -> bool:
         """Connect to MQTT broker"""
@@ -346,14 +347,18 @@ class MQTTHandler:
             
             # Call callback if set
             if self.command_callback:
-                # Schedule async callback
+                # Schedule async callback using asyncio.run_coroutine_threadsafe
                 import asyncio
                 try:
-                    loop = asyncio.get_event_loop()
-                    if loop.is_running():
-                        asyncio.create_task(self.command_callback(device_id, entity, command))
+                    # Get the main event loop (we need to store it during init)
+                    if hasattr(self, 'event_loop') and self.event_loop:
+                        # Schedule coroutine in the main event loop from this thread
+                        asyncio.run_coroutine_threadsafe(
+                            self.command_callback(device_id, entity, command),
+                            self.event_loop
+                        )
                     else:
-                        loop.run_until_complete(self.command_callback(device_id, entity, command))
+                        logger.error("Event loop not set, cannot process command")
                 except Exception as e:
                     logger.error(f"Error calling command callback: {e}", exc_info=True)
             else:

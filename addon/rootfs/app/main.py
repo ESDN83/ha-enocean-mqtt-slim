@@ -157,6 +157,9 @@ class EnOceanMQTTService:
                 logger.info("✓ MQTT connected successfully")
                 
                 # Subscribe to command topics
+                # Set the event loop for MQTT command callbacks
+                self.mqtt_handler.event_loop = asyncio.get_event_loop()
+                
                 if self.mqtt_handler.subscribe_commands(self.handle_command):
                     logger.info("✓ Subscribed to MQTT command topics")
                 else:
